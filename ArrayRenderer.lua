@@ -107,6 +107,10 @@ function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
 	local triscan = ScanTriangle (x1,y1, x2,y2, x3,y3)
 
 	for x,y,len in triscan do
+		x = math.floor(x+0.5)
+		y = math.floor(y+0.5)
+		len = math.floor(len+0.5)
+
 		self:LineH(x, y, len, value)
 	end
 end

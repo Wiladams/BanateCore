@@ -44,10 +44,6 @@ function Triangle_DDA(x1, y1, x2, y2, skiplast)
 	local j = 0 - decInc;
 	local i = 0 - incrementVal
 
---print("EFLA")
---print(shortLen, longLen, decInc, incrementVal, endVal)
---print("YLonger: ", yLonger)
-
 	return function()
 		i = i + incrementVal
 		if not skiplast then

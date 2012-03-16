@@ -14,7 +14,7 @@ function PrintArrayASCII(arr)
 	end
 end
 
-local fb = FixedArray2D(30, 25, "unsigned char", string.byte("#"))
+local fb = FixedArray2D(20, 20, "unsigned char", string.byte("."))
 
 local graphPort = ArrayRenderer(fb)
 
@@ -22,8 +22,8 @@ local graphPort = ArrayRenderer(fb)
 --Triangle(fb, 1,1,10,5,1,10, string.byte("X"))
 --Triangle(fb, 5,1,10,5,1,10, string.byte("X"))
 --Triangle(fb, 20,1, 1,15, 20,20, string.byte("x"))
-graphPort:FillTriangle(20,1, 1,15, 20,20, string.byte("O"))
-graphPort:FillTriangle(1,1, 10,5, 1,15, string.byte("x"))
+graphPort:FillTriangle(1,1, 12,7, 1,15, string.byte("x"))
+graphPort:FillTriangle(18,1, 8,7, 18,15, string.byte("O"))
 
 print("=== Frame Buffer ====")
 PrintArrayASCII(fb)
