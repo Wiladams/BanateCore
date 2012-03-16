@@ -8,7 +8,7 @@ require "PixelBuffer"
 
 print("pixelbuffer.lua - TEST")
 
-local pb = PixelBuffer({Width=320, Height=240})
+local pb = PixelBuffer({Origin={0,0}, Extent={320, 240}})
 local x = 10;
 local y = 10;
 

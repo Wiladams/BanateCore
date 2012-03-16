@@ -1,6 +1,7 @@
 -- pixelbuffer.lua
 --require "NativeTypes"
 require "Pixel"
+require "FixedArray2D"
 
 local class = require "class"
 local ffi = require"ffi"
@@ -46,7 +47,7 @@ function PixelBuffer:_init(params)
 
 	local pixeldata = FixedArray2D(self.Width, self.Height, self.DefaultPixel.TypeName)
 
-	self.Pixels = pixeldata
+	self.Data = pixeldata
 end
 
 function PixelBuffer:__tostring()
@@ -77,16 +78,15 @@ function PixelBuffer:GetOffset(x,y)
 		offset = x + (self.Extent[1] * (self.Extent[2] - 1 - y));
 	end
 
-	--local offset = (y*self.Width) + x
 	return offset
 end
 
 function PixelBuffer:SetPixel(x, y, value)
-	self.Pixels:Set(x, y, value)
+	self.Data:Set(x, y, value)
 end
 
 -- Retrieve a pixel from the array
 function PixelBuffer:GetPixel(x, y)
-	return self.Pixels:Get(x, y)
+	return self.Data:Get(x, y)
 end
 

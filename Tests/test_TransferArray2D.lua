@@ -41,18 +41,16 @@ end
 
 frameRect(window, string.byte("*"))
 
---print("  WINDOW  ")
---printArrayI(window)
 
 function threshold(dst, src)
 	if src >120 then return src end
 	return nil
 end
 
---TransferArray2D(framebuffer, window, 5,2,RectI(0,0,window.Width,window.Height),ComposeRect, threshold)
+TransferArray2D(framebuffer, window, 5,2,RectI(0,0,window.Width,window.Height),ComposeRect, threshold)
 --TransferArray2D(framebuffer, window, 5,2,RectI(0,0,window.Width,window.Height),ComposeRect)
 --TransferArray2D(framebuffer, window, 5,2,RectI(0,0,window.Width,window.Height),CopyRect)
-TransferArray2D(framebuffer, window, 5,2)
+--TransferArray2D(framebuffer, window, 13,12)
 
 
 print("=== Frame Buffer ====")
