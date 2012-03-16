@@ -1,0 +1,61 @@
+BanateCore
+
+This repository is a core set of routines, and classes that are 
+used as a base for multiple other projects.  There are a few key
+constraints that code found here follow.
+
+There must not be any external dependencies
+There must not be any OS specific code
+The code assumes the presence of the LuaJIT FFI mechanism
+
+Although not all pieces of the code use FFI, enough of it does
+that you really can't use the set of routines without using LuaJIT.
+So, this library will not work with straight Lua 5.2, it MUST 
+use LuaJIT.
+
+There is an emphasis on things related to graphics, such as pixel
+representations, line drawing routines, and some basic data structures
+such as RectI.
+
+Array2DAccessor
+Object to provide 2D access to arbitrary allocated memory
+
+ArrayRenderer
+Simple rendering to a 2D array
+
+class	
+A very simple basic class facility, borrowed from the penlight library
+
+EFLA	
+An iterator based implementation of the Extra Fast Line Algorithm
+
+FixedArray2D
+A 2D Array, which can be utilized for anything from Matrix operations
+to bitmap representation.
+
+glsl_math
+A set of routines that implements the math library as found in 
+the OpenGL Shader language GLSL.
+
+glsl_types
+Basic types that are found in the OpenGL Shader language GLSL
+
+GrayConverter
+A simple Luminace conversion routine.
+
+NativeMemory
+NativeTypes
+
+Pixel
+Representations of various pixel formats.
+
+PixelBuffer
+A wrapper on the FixedArray2D object
+
+PixelBufferRenderer
+
+RectI
+A simple Rectangle class
+
+TransferArray2D
+Transfer data between 2D arrays
