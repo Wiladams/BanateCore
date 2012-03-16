@@ -7,7 +7,7 @@ local band = bit.band
 local bor = bit.bor
 local lshift = bit.lshift
 local rshift = bit.rshift
-
+require "Triangle"
 
 local class = require "class"
 
@@ -100,6 +100,14 @@ function ArrayRenderer:SpanV(x,y,len,value, covers)
 
 	for row = y1,y2 do
 		self.Accessor:SetElement(x, row, value)
+	end
+end
+
+function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
+	local triscan = ScanTriangle (x1,y1, x2,y2, x3,y3)
+
+	for x,y,len in triscan do
+		self:LineH(x, y, len, value)
 	end
 end
 

@@ -24,13 +24,14 @@
 
 --]]
 
-function EFLA_Iterator(x1, y1, x2, y2)
+function EFLA_Iterator(x1, y1, x2, y2, skiplast)
+	skiplast = skiplast or false
 	local yLonger = false;
 	local incrementVal = 0;
 	local endVal = 0;
 
-	local shortLen = y2-y1;
-	local longLen = x2-x1;
+	local shortLen = (y2-y1);
+	local longLen = (x2-x1);
 
 	if (math.abs(shortLen) > math.abs(longLen)) then
 		local swap = shortLen;
@@ -59,27 +60,43 @@ function EFLA_Iterator(x1, y1, x2, y2)
 	local j = 0 - decInc;
 	local i = 0 - incrementVal
 
+--print("EFLA")
+--print(shortLen, longLen, decInc, incrementVal, endVal)
+--print("YLonger: ", yLonger)
+
 	if yLonger then
 		return function()
 			i = i + incrementVal
-			if i > endVal then return nil end
+			if not skiplast then
+				if math.abs(i) > math.abs(endVal) then return nil end
+			else
+				if math.abs(i) > math.abs(endVal-1) then return nil end
+			end
 
 			j = j + decInc
 			local x = x1 + j
 			local y = y1 + i
+			local u
+			if (skiplast) then u = i/(endVal-1) else u = i/endVal end
 
-			return x,y, i/endVal
+			return x,y, u
 		end
 	else
 		return function()
 			i = i + incrementVal
-			if i > endVal then return nil end
+			if not skiplast then
+				if math.abs(i) > math.abs(endVal) then return nil end
+			else
+				if math.abs(i) > math.abs(endVal-1) then return nil end
+			end
 
 			j = j + decInc
 			local x = x1 + i
 			local y = y1 + j
+			local u
+			if (skiplast) then u = i/(endVal-1) else u = i/endVal end
 
-			return x,y, i/endVal
+			return x,y, u
 		end
 	end
 end
@@ -89,9 +106,11 @@ end
 --[[
 print("EFLA.lua - TEST")
 
-local line = EFLA_Iterator(0, 0, 10, 10)
+--local line = EFLA_Iterator(5, 1, 1, 8)
+--local line = EFLA_Iterator(10, 1, 1, 5)
+local line = EFLA_Iterator(1, 1, 10, 5)
 
-for x,y,frac in line do
-	print(x,y,frac)
+for x,y,len in line do
+	print(x,y,len)
 end
 --]]

@@ -5,6 +5,7 @@ package.path = ppath;
 require "TransferArray2D"
 require "FixedArray2D"
 require "EFLA"
+require "Triangle"
 
 function PrintArrayASCII(arr)
 	for row=0,arr.Height-1 do

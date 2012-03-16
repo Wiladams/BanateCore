@@ -74,6 +74,11 @@ function FixedArray2D:Get(col, row)
 	return self.Data[offset]
 end
 
+function FixedArray2D:GetElement(col, row)
+	return self:Get(col,row)
+end
+
+
 function FixedArray2D:Set(col, row,value)
 	local offset = self:GetOffset(col, row)
 	if not offset then return nil end
@@ -81,6 +86,9 @@ function FixedArray2D:Set(col, row,value)
 	self.Data[offset] = value
 end
 
+function FixedArray2D:SetElement(col, row,value)
+	self:Set(col, row, value)
+end
 
 
 
