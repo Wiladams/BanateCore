@@ -25,6 +25,21 @@ print("*", base64.char64index('*'))
 -- l	108
 -- e	101
 
+--[[
+print(base64.Ldecode("cGxl"))
+print(base64.Ldecode("YXN1"))
+print(base64.Ldecode("cmUu"))
+print(base64.Ldecode("Zg=="))		-- f
+print(base64.Ldecode("Zm8="))		-- fo
+print(base64.Ldecode("Zm9v"))		-- foo
+print(base64.Ldecode("Zm9vYg=="))	-- foob
+print(base64.Ldecode("Zm9vYmE="))	-- fooba
+print(base64.Ldecode("Zm9vYmFy"))	-- foobar
+
+print(Ldecode("ZWFzdXJlLg=="))
+--]]
+
+
 assert(base64.encode("pleasure.") == "cGxlYXN1cmUu")
 assert(base64.encode("leasure.")	== "bGVhc3VyZS4=")
 assert(base64.encode("easure.")	== "ZWFzdXJlLg==")

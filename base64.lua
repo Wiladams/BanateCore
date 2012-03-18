@@ -7,11 +7,7 @@
 
 	The derivation of this code is from a public domain
 	implementation in 'C' by Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
-
-	The usage of LuaJIT is superfluous as I only use a character
-	array, which can easily be replaced by a simple table.
 --]]
-local ffi = require "ffi"
 local bit = require "bit"
 local rshift = bit.rshift
 local lshift = bit.lshift
@@ -21,20 +17,15 @@ local strlen = string.len
 local byte = string.byte
 local char = string.char
 
-ffi.cdef[[
-	typedef char char64[64];
-]]
 
-
+local base64bytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 local whitespacechars = "\n\r\t \f\b"
+
 local function iswhitespace(c)
 	local found = whitespacechars:find(c)
 	return found ~= nil
 end
 
-
-local code = ffi.new("char64", "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/")
-local base64bytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
 
 local function char64index(c)
 	local index = base64bytes:find(c)
@@ -54,9 +45,8 @@ local function encode(b, c1, c2, c3, n)
 	local s = {}
 
 	for i=0, 3 do
-		local c = string.char(code[tuple % 64])
-		--local code = char64index(tuple % 64) + string.byte('A')
-		--local c = string.char(code)
+		local offset = (tuple % 64)+1
+		local c = base64bytes:sub(offset, offset)
 
 		s[4-i] = c;
 		tuple = rshift(tuple, 6)	-- tuple/64;
@@ -105,7 +95,7 @@ end
 
 
 
-function decode(b, c1, c2, c3, c4, n)
+local function decode(b, c1, c2, c3, c4, n)
 	local tuple = c4+64*(c3+64*(c2+64*c1));
 	local s={};
 
@@ -117,14 +107,12 @@ function decode(b, c1, c2, c3, c4, n)
 	end
 
 	local decoded = table.concat(s)
---print("Decoded: ",decoded)
 	table.insert(b, decoded)
 end
 
 
 
--- decode(s)
-function Ldecode(s)
+local function Ldecode(s)
 	local l = strlen(s);
 	local b = {};
 	local n=0;
@@ -149,6 +137,8 @@ function Ldecode(s)
 				decode(b,t[1],t[2],t[3],0,3);
 			end
 
+			-- If we've swallowed the '=', then
+			-- we're at the end of the string, so return
 			return table.concat(b)
 		elseif iswhitespace(c) then
 			-- If whitespace, then do nothing
@@ -167,23 +157,12 @@ function Ldecode(s)
 		end
 	end
 
+	-- if we've gotten to here, we've reached
+	-- the end of the string, and there were
+	-- no padding characters, so return decoded
+	-- string in full
 	return table.concat(b);
 end
-
-
---[[
-print(Ldecode("cGxl"))
-print(Ldecode("YXN1"))
-print(Ldecode("cmUu"))
-print(Ldecode("Zg=="))		-- f
-print(Ldecode("Zm8="))		-- fo
-print(Ldecode("Zm9v"))		-- foo
-print(Ldecode("Zm9vYg=="))	-- foob
-print(Ldecode("Zm9vYmE="))	-- fooba
-print(Ldecode("Zm9vYmFy"))	-- foobar
-
-print(Ldecode("ZWFzdXJlLg=="))
---]]
 
 
 return {
