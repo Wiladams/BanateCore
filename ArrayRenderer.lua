@@ -78,7 +78,7 @@ function ArrayRenderer:Line(x1, y1, x2, y2, value)
 	for x,y in liner do
 		x = math.floor(x)
 		y = math.floor(y)
-print(x,y)
+--print(x,y)
 		self.Accessor:SetElement(x,y,value)
 	end
 end
