@@ -42,7 +42,7 @@
 --
 -- Algorithm: http://www.itl.nist.gov/fipspubs/fip180-1.htm
 --
---
+-- This code was declared to be placed in the public domain
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------

@@ -43,6 +43,9 @@ Basic types that are found in the OpenGL Shader language GLSL
 GrayConverter
 A simple Luminace conversion routine.
 
+hashes
+Implementation of CRC32 and Adler32
+
 NativeMemory
 NativeTypes
 
@@ -57,5 +60,10 @@ PixelBufferRenderer
 RectI
 A simple Rectangle class
 
+Sha1
+Implementation of SHA1
+
+Sha2
+Implementation of SHA2-224, 256
 TransferArray2D
 Transfer data between 2D arrays

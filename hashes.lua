@@ -5,7 +5,6 @@ local rshift = bit.rshift
 local byte = string.byte
 local strlen = string.len
 
--- local bit_band, bit_bxor, bit_rshift, str_byte, str_len = bit.band, bit.bxor, bit.rshift, string.byte, string.len
 local consts = {
 	0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
 	0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
@@ -89,7 +88,7 @@ local MOD_ADLER = 65521;
 -- where data is the location of the data in physical memory and
 -- len is the length of the data in bytes
 
-local function adler32(s)
+local function Adler32(s)
 local len = strlen(s)
     local a = 1
 	local b = 0
@@ -106,6 +105,6 @@ end
 
 
  return {
-	Adler32 = adler32,
+	Adler32 = Adler32,
 	CRC32 = CRC32,
 }
