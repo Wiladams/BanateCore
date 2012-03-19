@@ -16,6 +16,7 @@ function FixedArray2D:_init(width, height, typename, init)
 	self.Data = NAlloc(nelems, typename, init)
 
 	-- Set other attributes
+	self.Alignment = 1
 	self.Width = width
 	self.Height = height
 	self.TypeName = typename
