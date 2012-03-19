@@ -67,7 +67,7 @@ function ScanTriangle ( x1, y1, x2, y2, x3, y3)
 
 	x1,y1,x2,y2,x3,y3 = sortTriangle(x1, y1, x2, y2, x3, y3)
 
-print(x1, y1, x2, y2, x3, y3)
+--print(x1, y1, x2, y2, x3, y3)
 
 	local ldda = nil
 	local rdda = nil
