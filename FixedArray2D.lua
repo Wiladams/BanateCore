@@ -11,15 +11,16 @@ function FixedArray2D:_init(width, height, typename, init)
 	height = height or 1
 	typename = typename or "unsigned char"
 
+	self.TypeName = typename
+	self.PtrTypeName = string.format("%s*",self.TypeName)
+
 	--  Allocate the data buffer
 	local nelems = width * height
 	self.Data = NAlloc(nelems, typename, init)
 
 	-- Set other attributes
-	self.Alignment = 1
 	self.Width = width
 	self.Height = height
-	self.TypeName = typename
 	self.Length = width*height
 	self.SizeInBytes = NByteOffset(typename, self.Length)
 	self.BytesPerElement = NByteOffset(typename, 1)
@@ -89,6 +90,17 @@ end
 
 function FixedArray2D:SetElement(col, row,value)
 	self:Set(col, row, value)
+end
+
+function FixedArray2D:SetElements(col, row, len, values)
+	local data = ffi.cast(self.PtrTypeName, self.Data)
+	local dstoffset = self:GetOffset(x,y)
+	local elemSize = NSizeOf(self.TypeName)
+	dstoffset = dstoffset * elemSize
+	srcoffset = 0
+	srclen = len*elemSize
+
+	NCopyBytes(data, values, dstoffset, srcoffset, srclen)
 end
 
 

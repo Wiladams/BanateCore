@@ -9,6 +9,8 @@ local lshift = bit.lshift
 local rshift = bit.rshift
 require "Triangle"
 require "EFLA"
+require "TransferArray2D"
+require "glsl_math"
 
 local class = require "class"
 
@@ -60,6 +62,14 @@ function ArrayRenderer:LineH(x, y, len, value)
 	end
 end
 
+function ArrayRenderer:SpanH(x, y, len, values)
+	local elemSize = NSizeOf(values[0])
+	local rowSize = elemSize * len
+	local dstoffset = self.Accessor:GetOffset(x, y)*elemSize
+
+	NCopyBytes(self.Accessor.Data, values, dstoffset, 0, rowSize)
+end
+
 function ArrayRenderer:LineV(x,y,len,value)
 	if x < 0 or x >= self.Width then return end
 
@@ -78,13 +88,27 @@ function ArrayRenderer:Line(x1, y1, x2, y2, value)
 	for x,y in liner do
 		x = math.floor(x)
 		y = math.floor(y)
---print(x,y)
+
 		self.Accessor:SetElement(x,y,value)
 	end
 end
 
+function maxwidth(x1,x2,x3)
+	local minx = math.min(math.min(x1, x2), x3)
+	local maxx = math.max(math.max(x1, x2), x3)
+--print("Min/Max: ", minx, maxx)
+	local maxwidth = maxx-minx+1
+
+	return maxwidth
+end
+
 function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
 	local triscan = ScanTriangle (x1,y1, x2,y2, x3,y3)
+
+	local elemSize = NSizeOf(value.TypeName)
+	local maxWidth = maxwidth(x1, x2, x3)
+	local rowSize = maxWidth * elemSize
+	local rowstore = NAlloc(maxWidth, value.TypeName, value)
 
 	for x,y,len in triscan do
 		x = math.floor(x+0.5)
@@ -92,6 +116,7 @@ function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
 		len = math.floor(len+0.5)
 
 		self:LineH(x, y, len, value)
+		--self:SpanH(x, y, len, rowstore)
 	end
 end
 
@@ -101,7 +126,16 @@ function ArrayRenderer:FillQuad(x1,y1, x2,y2, x3,y3, x4,y4, value)
 end
 
 function ArrayRenderer:FillRectangle(x,y,width,height, value)
+	-- Create a row
+	local elemSize = NSizeOf(value.TypeName)
+	local rowSize = width * elemSize
+	local rowstore = NAlloc(width, value.TypeName, value)
+
 	for row =y,y+height-1 do
-		self:LineH(x, row, width, value)
+		self:SpanH(x, row, width, rowstore)
 	end
+end
+
+function ArrayRenderer:BitBlt(src,  dstX, dstY, srcBounds, driver, elementOp)
+	TransferArray2D(self.Accessor, src,  dstX, dstY, srcBounds, driver, elementOp)
 end

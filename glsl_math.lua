@@ -6,7 +6,7 @@
 -- Implement a language skin that makes
 -- gives a GLSL feel to the coding
 --=====================================
-require ("LinearAlgebra")
+--require ("LinearAlgebra")
 
 pi = math.pi;
 

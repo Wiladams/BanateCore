@@ -29,8 +29,7 @@ function Array2DAccessor:_init(params)
 	params = params or ArrayAccessor.Defaults
 
 	self.TypeName = params.TypeName or Array2DAccessor.Defaults.TypeName
-	--self.DefaultElement = ffi.new(self.TypeName)
-
+	self.PtrTypeName = string.format("%s*",self.TypeName)
 
 	self.Width = params.Width or Array2DAccessor.Defaults.Width
 	self.Height = params.Height or Array2DAccessor.Defaults.Height
@@ -73,4 +72,11 @@ function Array2DAccessor:SetElement(x, y, value)
 	local offset = self:GetOffset(x,y)
 
 	data[offset] = value
+end
+
+
+function Array2DAccessor:SetElements(col, row, len, values)
+	local data = ffi.cast(self.TypeName, self.Data)
+	local offset = self:GetOffset(x,y)
+
 end
