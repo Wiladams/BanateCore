@@ -105,10 +105,10 @@ end
 function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
 	local triscan = ScanTriangle (x1,y1, x2,y2, x3,y3)
 
-	local elemSize = NSizeOf(value.TypeName)
+	local elemSize = self.Accessor.BytesPerElement
 	local maxWidth = maxwidth(x1, x2, x3)
 	local rowSize = maxWidth * elemSize
-	local rowstore = NAlloc(maxWidth, value.TypeName, value)
+	local rowstore = NAlloc(maxWidth, self.Accessor.TypeName, value)
 
 	for x,y,len in triscan do
 		x = math.floor(x+0.5)
