@@ -11,6 +11,7 @@ require "Triangle"
 require "EFLA"
 require "TransferArray2D"
 require "glsl_math"
+require "glsl_types"
 
 local class = require "class"
 
@@ -21,6 +22,8 @@ function ArrayRenderer:_init(accessor)
 	self.Accessor = accessor
 	self.Width = accessor.Width
 	self.Height = accessor.Height
+
+	self.ScratchRow = NAlloc(self.Width, self.Accessor.TypeName)
 end
 
 function ArrayRenderer:GetOffset(x,y)
@@ -63,7 +66,7 @@ function ArrayRenderer:LineH(x, y, len, value)
 end
 
 function ArrayRenderer:SpanH(x, y, len, values)
-	local elemSize = NSizeOf(values[0])
+	local elemSize = self.Accessor.BytesPerElement
 	local rowSize = elemSize * len
 	local dstoffset = self.Accessor:GetOffset(x, y)*elemSize
 
@@ -102,23 +105,54 @@ function maxwidth(x1,x2,x3)
 	return maxwidth
 end
 
+--[[
+
+
 function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
-	local triscan = ScanTriangle (x1,y1, x2,y2, x3,y3)
+	local minX, minY, maxY,maxY = getTriangleBBox(x1, y1, x2, y2, x3, y3)
+
+	for y = minY, maxY do
+		for x = minX, maxX do
+			if insideTriangle(tri, x,y) then
+				self.Accessor:SetElement(x,y,value)
+			end
+		end
+	end
+end
+--]]
+
+
+function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
+	local triscan = ScanTriangle (vec2(x1,y1), vec2(x2,y2), vec2(x3,y3))
 
 	local elemSize = self.Accessor.BytesPerElement
 	local maxWidth = maxwidth(x1, x2, x3)
 	local rowSize = maxWidth * elemSize
-	local rowstore = NAlloc(maxWidth, self.Accessor.TypeName, value)
+	--local rowstore = NAlloc(maxWidth, self.Accessor.TypeName, value)
+	local remaining = 0
 
-	for x,y,len in triscan do
-		x = math.floor(x+0.5)
-		y = math.floor(y+0.5)
-		len = math.floor(len+0.5)
+		-- Fill the scrath row with the intended value
+	for i=1,maxWidth do
+		self.ScratchRow[i-1] = value
+	end
 
-		self:LineH(x, y, len, value)
-		--self:SpanH(x, y, len, rowstore)
+	for lx, ly, len, rx, ry, lu, ru in triscan do
+		local lx1 = math.floor(lx+0.5)
+		local rx1 = math.floor(rx+0.5)
+		local newlen = rx1-lx1+1
+--print(lx1, rx1, ly, newlen)
+		local x = lx1
+		local y = ly
+		local len = newlen
+		if len > 0 then
+			--self:LineH(x, y, len, value)
+			self:SpanH(x, y, len, self.ScratchRow)
+		end
+		--local remaining = math.min((self.Width - x), len)
 	end
 end
+
+
 
 function ArrayRenderer:FillQuad(x1,y1, x2,y2, x3,y3, x4,y4, value)
 	self:FillTriangle(x1,y1, x2,y2, x3,y3, value)
@@ -127,12 +161,17 @@ end
 
 function ArrayRenderer:FillRectangle(x,y,width,height, value)
 	-- Create a row
-	local elemSize = NSizeOf(value.TypeName)
-	local rowSize = width * elemSize
-	local rowstore = NAlloc(width, value.TypeName, value)
+	--local elemSize = self.Accessor.BytesPerElement
+	--local rowSize = width * elemSize
+	--local rowstore = NAlloc(width, self.Accessor.TypeName, value)
+
+	-- Fill the scrath row with the intended value
+	for i=1,width do
+		self.ScratchRow[i-1] = value
+	end
 
 	for row =y,y+height-1 do
-		self:SpanH(x, row, width, rowstore)
+		self:SpanH(x, row, width, self.ScratchRow)
 	end
 end
 

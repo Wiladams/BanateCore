@@ -1,25 +1,60 @@
 
+
+function FindTopmostPolyVertex(poly, nelems)
+	local ymin = math.huge
+	local vmin = 0;
+
+	for i=1, nelems do
+	--print(poly[i])
+		if poly[i][1] < ymin then
+			ymin = poly[i][1]
+			vmin = i
+		end
+	end
+
+	return vmin
+end
+
+function RotateVertices(poly, nelems, starting)
+--print("RotateVertices: ", nelems, starting)
+	local res={}
+	local offset = starting
+	for cnt=1,nelems do
+		table.insert(res, poly[offset])
+		offset = offset + 1
+		if offset > nelems then
+			offset = 1
+		end
+	end
+
+	return res
+end
+
+
 function swap(a, b)
 	return b, a
 end
 
-function sortTriangle(x0, y0,x1, y1, x2, y2)
-	if (y0 > y1) then
-		y0, y1 = swap(y0, y1);
-		x0, x1 = swap(x0, x1);
-	end
+function getTriangleBBox(x0,y0, x1,y1, x2,y2)
+	local minX = math.min(x0, math.min(x1, x2))
+	local minY = math.min(y0, math.min(y1, y2))
 
-	if (y1 > y2) then
-		y2, y1 = swap(y2, y1);
-		x2, x1 = swap(x2, x1);
-	end
+	local maxX = math.max(x0, math.max(x1, x2))
+	local maxY = math.max(y0, math.max(y1, y2))
 
-	if (y0 > y1) then
-		y0, y1 = swap(y0, y1);
-		x0, x1 = swap(x0, x1);
-	end
+	return minX, minY, maxX, maxY
+end
 
-	return x0, y0, x1, y1, x2, y2
+function sortTriangle(v1, v2, v3)
+	local verts = {v1, v2, v3}
+	local topmost = FindTopmostPolyVertex(verts, 3)
+	local sorted = RotateVertices(verts, 3, topmost)
+
+	-- Top line flat
+
+	-- Bottom line flat
+
+	return sorted
 end
 
 function Triangle_DDA(x1, y1, x2, y2, skiplast)
@@ -62,19 +97,21 @@ function Triangle_DDA(x1, y1, x2, y2, skiplast)
 	end
 end
 
-function ScanTriangle ( x1, y1, x2, y2, x3, y3)
+function ScanTriangle ( v1, v2, v3)
 	local a, b, y, last;
 
-	x1,y1,x2,y2,x3,y3 = sortTriangle(x1, y1, x2, y2, x3, y3)
+	local sorted = sortTriangle(v1, v2, v3)
 
---print(x1, y1, x2, y2, x3, y3)
+	local x1, y1 = sorted[1][0], sorted[1][1]
+	local x2, y2 = sorted[2][0], sorted[2][1]
+	local x3, y3 = sorted[3][0], sorted[3][1]
 
 	local ldda = nil
 	local rdda = nil
 	local longdda = nil
 
 	-- Setup left and right edge dda iterators
-	if x2 < x1 then
+	if x2 <= x1 then
 		ldda = Triangle_DDA(x1,y1, x2,y2)
 		rdda = Triangle_DDA(x1,y1, x3,y3)
 		longdda = rdda

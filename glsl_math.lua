@@ -3,49 +3,47 @@
 -- Contributed by: William A Adams
 -- September 2011
 --
--- Implement a language skin that makes
+-- Implement a language skin that
 -- gives a GLSL feel to the coding
 --=====================================
---require ("LinearAlgebra")
+require "glsl_types"
 
 pi = math.pi;
-
-
 
 
 function apply(f, v)
 	if type(v) == "number" then
 		return f(v)
 	end
-	if type(v) == "table" then
-		local res = {}
-		for i=1,#v do
-			res[i] = f(v[i])
-		end
-		return res
+
+
+	local nelem = floatVectorSize(v)
+	local res = floatv(nelem)
+	for i=0,nelem-1 do
+		res[i] = f(v[i])
 	end
 
-	return nil
+	return res
 end
 
 function apply2(f, v1, v2)
 	if type(v1) == "number" then
 		return f(v1, v2)
 	end
-	if type(v1) == "table" then
-		local res = {}
-		if type(v2)=="number" then
-            for i=1,#v1 do
-				res[i] = f(v1[i],v2)
-			end
-		else
-			for i=1,#v1 do
-				res[i] = f(v1[i], v2[i])
-			end
+
+	local nelem = floatVectorSize(v1)
+	local res = floatv(nelem)
+	if type(v2)=="number" then
+		for i=0,nelem-1 do
+			res[i] = f(v1[i],v2)
 		end
-		return res
+	else
+		for i=0,nelem-1 do
+			res[i] = f(v1[i], v2[i])
+		end
 	end
-	return nil
+
+	return res
 end
 
 function add(x,y)
@@ -466,7 +464,8 @@ function isnumtrue(x)
 end
 
 function any(x)
-	for i=1,#x do
+	local nelem = floatVectorSize(x)
+	for i=0,nelem-1 do
 		local f = isnumtrue(x[i])
 		if f then return true end
 	end
@@ -475,7 +474,8 @@ function any(x)
 end
 
 function all(x)
-	for i=1,#x do
+	local nelem = floatVectorSize(x)
+	for i=0,nelem-1 do
 		local f = isnumtrue(x[i])
 		if not f then return false end
 	end
@@ -492,38 +492,6 @@ function angle(u, v)
 	end
 end
 
---=====================================
---	Vector Constructors
---=====================================
-function vec2(x, y)
-	return vec.new({x, y})
-end
 
-function vec3(x, y, z)
-	z = z or 0
-	return vec.new({x, y, z})
-end
 
-function vec4(x,y,z,w)
-	w = w or 0
-	return vec.new({x, y, z, w})
-end
 
---[[
-print("glsl.lua - TEST")
-
-for angle = 0,math.pi, math.pi/8  do
-	print(sin(angle))
-end
-
-v1 = vec.new{1, 0, 1, 0}
-v2 = vec3(1, 1, 1)
-v3 = vec3(0, 0, 0)
-
-print(any(v1))
-print(any(v3))
-
-print(all(v1))
-print(all(v2))
-
---]]
