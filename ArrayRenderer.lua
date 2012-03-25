@@ -1,19 +1,13 @@
 -- ArrayRenderer.lua
-local ffi = require"ffi"
-local bit = require"bit"
+require "000"
 
-local bnot = bit.bnot
-local band = bit.band
-local bor = bit.bor
-local lshift = bit.lshift
-local rshift = bit.rshift
+
 require "Triangle"
 require "EFLA"
 require "TransferArray2D"
 require "glsl_math"
 require "glsl_types"
 
-local class = require "class"
 
 class.ArrayRenderer()
 

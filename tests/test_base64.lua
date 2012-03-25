@@ -2,7 +2,9 @@
 local ppath = package.path..';..\\?.lua'
 package.path = ppath;
 
-local base64 = require "base64"
+local BC = require "BanateCore"
+local base64 = BC.Base64
+
 
 --[[
 print("\\n: ", iswhitespace('\n'))

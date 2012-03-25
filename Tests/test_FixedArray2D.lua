@@ -2,7 +2,8 @@
 local ppath = package.path..';..\\?.lua'
 package.path = ppath;
 
-require "FixedArray2D"
+local BC = require "BanateCore"
+local FixedArray2D = BC.FixedArray2D
 
 local arr1 = FixedArray2D(4,4,"float")
 

@@ -1,8 +1,5 @@
 -- ByteArray.lua
-
-local ffi = require "ffi"
-local C = ffi.C
-
+require "000"
 
 
 ffi.cdef[[
@@ -11,7 +8,6 @@ typedef struct {
 	unsigned char *data;
 } array_b;
 ]]
-
 
 
 ByteArray = nil

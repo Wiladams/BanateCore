@@ -1,4 +1,5 @@
-local ffi = require "ffi"
+require "000"
+
 
 ffi.cdef[[
 	typedef struct {

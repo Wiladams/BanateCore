@@ -1,15 +1,8 @@
 -- PixelBufferRenderer.lua
-local ffi = require"ffi"
-local bit = require"bit"
-
-local bnot = bit.bnot
-local band = bit.band
-local bor = bit.bor
-local lshift = bit.lshift
-local rshift = bit.rshift
+require "000"
 
 
-local class = require "class"
+--local class = require "class"
 
 
 

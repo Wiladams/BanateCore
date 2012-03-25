@@ -46,10 +46,8 @@
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-local bit = require "bit"
-local band = bit.band
-local bor = bit.bor
-local bxor = bit.bxor
+require "000"
+
 local w32 = require "w32_ops"
 
 -- local storing of global functions (minor speedup)
@@ -174,12 +172,4 @@ function hmac_sha1_binary(key, text)
 end
 
 
-
-
-return {
-	sha1 = sha1,
-	sha1_binary = sha1_binary,
-	hmac_sha1 = hmac_sha1,
-	hmac_sha1_binary = hmac_sha1_binary,
-}
 

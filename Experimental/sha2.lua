@@ -1,11 +1,9 @@
 -- http://lua-users.org/wiki/SecureHashAlgorithm
+require "000"
 
-local bit32 = require "bit"
 
 -- SHA-256 code in Lua 5.2; based on the pseudo-code from
 -- Wikipedia (http://en.wikipedia.org/wiki/SHA-2)
-local band, rrotate, bxor, rshift, bnot =
-  bit32.band, bit32.ror, bit32.bxor, bit32.rshift, bit32.bnot
 
 local string, setmetatable, assert = string, setmetatable, assert
 
@@ -162,7 +160,7 @@ end
 ----------------------------------------------------------------------
 local HH = {}    -- to reuse
 
-local function hash224 (msg)
+local function sha224 (msg)
 	msg = preproc(msg, #msg)
 	local H = initH224(HH)
 
@@ -174,7 +172,7 @@ local function hash224 (msg)
 	return finalresult224(H)
 end
 
-local function hash256 (msg)
+local function sha256 (msg)
 	msg = preproc(msg, #msg)
 	local H = initH256(HH)
 	-- Process the message in successive 512-bit (64 bytes) chunks:
@@ -218,12 +216,10 @@ function mt:close ()
 end
 
 ----------------------------------------------------------------------
+sha2 = {
+	sha224 = sha224,
+	sha256 = sha256,
 
-return {
-  sha224 = hash224,
-  sha256 = hash256,
-  new256 = new256,
-  }
 
   -- FIPS PUB 180-2 (2002)
   -- 224 US 6829355

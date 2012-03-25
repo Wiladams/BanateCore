@@ -1,11 +1,7 @@
-local bit = require "bit"
-local band = bit.band
-local bxor = bit.bxor
-local rshift = bit.rshift
-local byte = string.byte
-local strlen = string.len
+require "000"
 
-local consts = {
+Hashes ={}
+Hashes.consts = {
 	0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
 	0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
 	0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988,
@@ -73,29 +69,29 @@ local consts = {
 	}
 
 
-function CRC32(s)
+function Hashes.CRC32(s)
 	local crc, l, i = 0xFFFFFFFF, strlen(s)
 	for i = 1, l, 1 do
-		crc = bxor(rshift(crc, 8), consts[band(bxor(crc, byte(s, i)), 0xFF) + 1])
+		crc = bxor(rshift(crc, 8), consts[band(bxor(crc, getbyte(s, i)), 0xFF) + 1])
 	end
 
 	return bxor(crc, -1)
 end
 
 
-local MOD_ADLER = 65521;
 
 -- where data is the location of the data in physical memory and
 -- len is the length of the data in bytes
 
-local function Adler32(s)
-local len = strlen(s)
+function Hashes.Adler32(s)
+	local MOD_ADLER = 65521;
+	local len = strlen(s)
     local a = 1
 	local b = 0
 
     -- Process each byte of the data in order
     for index = 1, len do
-        a = (a + byte(s, index)) % MOD_ADLER;
+        a = (a + getbyte(s, index)) % MOD_ADLER;
         b = (b + a) % MOD_ADLER;
     end
 
@@ -104,7 +100,4 @@ end
 
 
 
- return {
-	Adler32 = Adler32,
-	CRC32 = CRC32,
-}
+

@@ -8,7 +8,6 @@
 	hmac.new(hash_function, block_size) -> function(message, key) -> HMAC string
 --]]
 
-local string = string
 local sha2 = require "sha2"
 
 local function Decode( aValue )
@@ -59,9 +58,7 @@ local function HMAC_SHA_256(aKey, message, hash, blocksize, opad, ipad)
 
 end
 
-return {
-	HMAC_SHA_256 = HMAC_SHA_256,
-}
+
 
 
 

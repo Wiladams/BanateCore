@@ -1,3 +1,24 @@
+ffi = require"ffi"
+C = ffi.C
+
+bit = require"bit"
+bnot = bit.bnot
+band = bit.band
+bor = bit.bor
+bxor = bit.bxor
+rrotate = bit.ror
+lrotate = bit.rol
+
+lshift = bit.lshift
+rshift = bit.rshift
+
+
+strlen = string.len
+getchar = string.char
+getbyte = string.byte
+
+
+
 --- Provides a reuseable and convenient framework for creating classes in Lua.
 -- Two possible notations: <br> <code> B = class(A) </code> or <code> class.B(A) </code>. <br>
 -- <p>The latter form creates a named class. </p>
@@ -130,7 +151,7 @@ end
 -- @param base optional base class
 -- @param c_arg optional parameter to class ctor
 -- @param c optional table to be used as class
-local class
+--class
 class = setmetatable({},{
     __call = function(fun,...)
         return _class(...)
@@ -151,5 +172,164 @@ class = setmetatable({},{
 })
 
 
-return class
+
+
+
+
+--[[
+	The following are common base types that are found
+	within typical programming languages.  They represent
+	the common numeric types.
+
+	These base types are particularly useful when
+	interop to C libraries is required.  Using these types
+	will reduce the amount of conversions that occur when
+	marshalling to/from the C functions.
+--]]
+
+
+bool = ffi.typeof("unsigned char")
+byte = ffi.typeof("unsigned char")
+sbyte = ffi.typeof("char")
+char = ffi.typeof("int")
+short = ffi.typeof("short")
+ushort = ffi.typeof("unsigned short")
+int = ffi.typeof("int")
+uint = ffi.typeof("unsigned int")
+long = ffi.typeof("__int64")
+ulong = ffi.typeof("unsigned __int64")
+
+float = ffi.typeof("float")
+double = ffi.typeof("double")
+
+
+-- Base types matching those found in the .net frameworks
+ffi.cdef[[
+	typedef unsigned char	Byte;
+	typedef int16_t			Int16;
+	typedef int16_t			UInt16;
+	typedef int32_t			Int32;
+	typedef uint32_t		UInt32;
+	typedef int64_t			Int64;
+	typedef uint64_t		UInt64;
+	typedef float			Single;
+	typedef double			Double;
+
+]]
+
+
+--[[
+	These definitions allow for easy array construction.
+	A typical usage would be:
+
+		shorts(32, 16)
+
+	This will allocate an array of 32 shorts, initialied to the value '16'
+	If the initial value is not specified, a value of '0' is used.
+--]]
+
+boolv = ffi.typeof("unsigned char[?]")
+bytev = ffi.typeof("unsigned char[?]")
+sbytev = ffi.typeof("char[?]")
+charv = ffi.typeof("int[?]")
+shortv = ffi.typeof("short[?]")
+ushortv = ffi.typeof("unsigned short[?]")
+intv = ffi.typeof("int[?]")
+uintv = ffi.typeof("unsigned int[?]")
+longv = ffi.typeof("__int64[?]")
+ulongv = ffi.typeof("unsigned __int64[?]")
+
+floatv = ffi.typeof("float[?]")
+doublev = ffi.typeof("double[?]")
+
+function floatVectorSize(vec)
+	return rshift(ffi.sizeof(vec),3)
+end
+
+
+
+
+
+
+--[[
+	Native Memory Allocation
+--]]
+
+function NAlloc(n, typename, init)
+	local data = nil
+	typename = typename or "unsigned char"
+
+	if type(typename) == "string" then
+		local efmt = string.format("%s [?]", typename)
+		data = ffi.new(efmt, n)
+	end
+
+	if init then
+		for i=0,n-1 do
+			data[i] = init
+		end
+	end
+
+	return data
+end
+
+function NSizeOf(thing)
+	return ffi.sizeof(thing)
+end
+
+function NByteOffset(typename, numelem)
+	return ffi.sizeof(typename) * numelem
+end
+
+--
+-- Basic native memory byte copy
+-- This routines checks the bounds of the elements
+-- so it won't go over.
+--
+-- Input:
+--	dst - Must be pointer to a ctype
+--	src - Must be pointer to a ctype
+--	dstoffset - Offset, starting at 0, if nil, will be set to 0
+--	srcoffset - Offset in source, starting at 0, if nil, will be set to 0
+--	srclen - number of bytes of source to copy, if nil, will copy all bytes
+--
+-- Return:
+--	Nil if the copy failed
+--  Number of bytes copied if succeeded
+--
+function NCopyBytes(dst, src, dstoffset, srcoffset, srclen)
+	local dstSize = ffi.sizeof(dst)
+	local srcSize = ffi.sizeof(src)
+
+	srclen = srclen or srcSize
+	dstoffset = dstoffset or 0
+	srcoffset = srcoffset or 0
+
+	local dstBytesAvailable = dstSize - dstoffset
+	local srcBytesAvailable = srcSize - srcoffset
+	local srcBytesToCopy = math.min(srcBytesAvailable, srclen)
+	local nBytesToCopy = math.min(srcBytesToCopy, dstBytesAvailable)
+
+	-- Use the right offset
+	local bytedst = ffi.cast("unsigned char *", dst)
+	local bytesrc = ffi.cast("unsigned char *", src)
+
+	ffi.copy(bytedst+dstoffset, bytesrc+srcoffset, nBytesToCopy)
+
+	return nBytesToCopy
+end
+
+function NSetBytes(dst, value, dstoffset, nbytes)
+	local dstSize = ffi.sizeof(dst)
+	local srcLen = nbytes or dstSize
+
+	local dstBytesAvailable = dstSize - dstoffset
+	nBytesToCopy = math.miin(dstBytesAvailable, srcLen)
+
+	local bytedst = ffi.cast("unsigned char *", dst)
+
+	ffi.fill(bytedst+dstoffset, nBytesToCopy, value)
+
+	return nBytesToCopy
+end
 

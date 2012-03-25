@@ -101,16 +101,3 @@ function EFLA_Iterator(x1, y1, x2, y2, skiplast)
 	end
 end
 
-
-
---[[
-print("EFLA.lua - TEST")
-
---local line = EFLA_Iterator(5, 1, 1, 8)
---local line = EFLA_Iterator(10, 1, 1, 5)
-local line = EFLA_Iterator(1, 1, 10, 5)
-
-for x,y,len in line do
-	print(x,y,len)
-end
---]]

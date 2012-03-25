@@ -2,8 +2,9 @@
 local ppath = package.path..';..\\?.lua'
 package.path = ppath;
 
-require "FixedArray2D"
-require "ArrayRenderer"
+local BC = require "BanateCore"
+local FixedArray2D = BC.FixedArray2D
+
 
 function PrintArrayASCII(arr)
 	for row=0,arr.Height-1 do
@@ -26,8 +27,8 @@ local graphPort = ArrayRenderer(fb)
 --graphPort:FillTriangle(18,1, 8,7, 18,15, string.byte("O"))
 
 --graphPort:FillRectangle(1,1,10,10,string.byte("x"))
---graphPort:FillTriangle(19,1,10,10,19,10, string.byte("0"))
---graphPort:FillTriangle(10,5,1,15,18,15, string.byte("#"))
+graphPort:FillTriangle(19,1,10,10,19,10, string.byte("0"))
+graphPort:FillTriangle(10,5,1,15,18,15, string.byte("#"))
 graphPort:FillTriangle(0,0, 0,4, 4,4, string.byte("#"))
 
 print("=== Frame Buffer ====")

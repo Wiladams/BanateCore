@@ -1,8 +1,6 @@
 -- Pixel.lua
+require "000"
 
-local ffi = require"ffi"
-local C = ffi.C
-require "GrayConverter"
 
 ffi.cdef[[
 
@@ -15,6 +13,50 @@ ffi.cdef[[
 	typedef struct { uint8_t Blue, Green, Red, Alpha; } pixel_BGRA_b, *Ppixel_BGRA_b;
 	typedef struct { uint8_t Blue, Green, Red; } pixel_BGR_b, *Ppixel_BGR_b;
 ]]
+
+
+GrayConverter={}
+GrayConverter_mt = {}
+
+function GrayConverter.new(...)
+	local new_inst = {}
+	new_inst.redfactor = {}
+	new_inst.greenfactor = {}
+	new_inst.bluefactor = {}
+
+	-- Based on old NTSC
+	-- static float redcoeff = 0.299f;
+	-- static float greencoeff = 0.587f;
+	-- static float bluecoeff = 0.114f;
+
+	-- New CRT and HDTV phosphors
+	local redcoeff = 0.2225;
+	local greencoeff = 0.7154;
+	local bluecoeff = 0.0721;
+
+	for i=1,256 do
+		new_inst.redfactor[i] = math.min(56, math.floor(((i-1) * redcoeff) + 0.5));
+		new_inst.greenfactor[i] = math.min(181, math.floor(((i-1) * greencoeff) + 0.5));
+		new_inst.bluefactor[i] = math.min(18, math.floor(((i-1) * bluecoeff) + 0.5));
+	end
+
+	setmetatable(new_inst, GrayConverter_mt)
+
+	return new_inst
+end
+
+function GrayConverter.Execute(self, r,g,b)
+	local lum =
+		self.redfactor[r+1] +
+		self.greenfactor[g+1] +
+		self.bluefactor[b+1];
+
+	return lum
+end
+
+GrayConverter_mt.__call = GrayConverter.Execute;
+
+
 
 local lumaker = GrayConverter.new()
 
@@ -243,33 +285,4 @@ PixelBGRA_mt = {
 }
 PixelBGRA = ffi.metatype("pixel_BGRA_b", PixelBGRA_mt)
 
-
---[[
-print("Pixel.lua - TEST")
-
-
-local lum1 = PixelLum(15)
-print("PixelLum:BitsPerPixel - ", lum1.BitsPerPixel)
-print(lum1)
-
-local lum2 = PixelLumAlpha(127, 255)
-print("PixelLumAlpha Size: ", lum2.Size)
-print(lum2)
-
-local pixrgba1 = PixelRGBA(2, 4, 6, 255)
-print("PixelRGBA Size: ", pixrgba1.Size)
-print(pixrgba1)
-
-local pixrgb1 = PixelRGB(65, 66, 67)
-print("PixelRGB Size: ", pixrgb1.Size)
-print(pixrgb1)
-local rgbarray = pixrgb1:ToArray()
---print("RGB Array: ", rgbarray[1]), rgbarray[2], rgbarray[3]);
---print("RGB Array: ", rgbarray);
-
-local pixrgba2 = PixelRGBA()
-print("RGBA - Default")
-print(pixrgba2)
-
---]]
 

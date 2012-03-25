@@ -6,7 +6,7 @@
 -- Implement a language skin that
 -- gives a GLSL feel to the coding
 --=====================================
-require "glsl_types"
+--require "glsl_types"
 
 pi = math.pi;
 

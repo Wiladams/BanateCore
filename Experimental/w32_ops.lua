@@ -7,14 +7,11 @@
 -- setting the local cfg_caching variable to false.
 -- For all binary operations, the 32 bit numbers are split into 8 bit values
 -- that are are then combined and then merged again.
+require "000"
 
 local floor,modf = math.floor,math.modf
 local char,format,rep = string.char,string.format,string.rep
 
-local bit = require "bit"
-local band = bit.band
-local bor = bit.bor
-local bxor = bit.bxor
 
 -- set this to false if you don't want to build several 64k sized tables when
 -- loading this file (takes a while but grants a boost of factor 13)

@@ -1,10 +1,10 @@
 -- pixelbuffer.lua
---require "NativeTypes"
+require "000"
+
 require "Pixel"
 require "FixedArray2D"
 
 local class = require "class"
-local ffi = require"ffi"
 
 PixmapOrientation = {
     -- The least row of the image is at the low byte of memory.  Rows progress

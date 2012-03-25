@@ -1,7 +1,4 @@
-require "NativeTypes"
-require "NativeMemory"
-
-local class = require "class"
+require "000"
 
 class.FixedArray2D()
 
