@@ -1,5 +1,10 @@
 require "000"
 
+--[[
+	Reference on Optimization
+	http://lua-users.org/lists/lua-l/2011-02/msg00299.html
+--]]
+
 class.FixedArray2D()
 
 

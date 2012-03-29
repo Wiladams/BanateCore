@@ -1,6 +1,7 @@
 -- Pixel.lua
+if not BanateCore_000 then
 require "000"
-
+end
 
 ffi.cdef[[
 

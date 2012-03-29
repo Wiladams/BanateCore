@@ -1,3 +1,5 @@
+BanateCore_000 = true
+
 ffi = require"ffi"
 C = ffi.C
 
@@ -157,10 +159,12 @@ class = setmetatable({},{
         return _class(...)
     end,
     __index = function(tbl,key)
+--[[
         if key == 'class' then
             io.stderr:write('require("pl.class").class is deprecated. Use require("pl.class")\n')
             return class
         end
+--]]
         local env = _G
         return function(...)
             local c = _class(...)
@@ -188,34 +192,30 @@ class = setmetatable({},{
 --]]
 
 
-bool = ffi.typeof("unsigned char")
-byte = ffi.typeof("unsigned char")
-sbyte = ffi.typeof("char")
-char = ffi.typeof("int")
-short = ffi.typeof("short")
-ushort = ffi.typeof("unsigned short")
-int = ffi.typeof("int")
-uint = ffi.typeof("unsigned int")
-long = ffi.typeof("__int64")
-ulong = ffi.typeof("unsigned __int64")
+uint8_t = ffi.typeof("uint8_t")
+int8_t = ffi.typeof("char")
+int16_t = ffi.typeof("int16_t")
+uint16_t = ffi.typeof("unsigned short")
+int32_t = ffi.typeof("int32_t")
+uint32_t = ffi.typeof("uint32_t")
+int64_t = ffi.typeof("int64_t")
+uint64_t = ffi.typeof("uint64_t")
 
 float = ffi.typeof("float")
 double = ffi.typeof("double")
 
+bool = ffi.typeof("unsigned char")
 
 -- Base types matching those found in the .net frameworks
-ffi.cdef[[
-	typedef unsigned char	Byte;
-	typedef int16_t			Int16;
-	typedef int16_t			UInt16;
-	typedef int32_t			Int32;
-	typedef uint32_t		UInt32;
-	typedef int64_t			Int64;
-	typedef uint64_t		UInt64;
-	typedef float			Single;
-	typedef double			Double;
-
-]]
+Byte = uint8_t
+Int16 = int16_t
+UInt16 = uint16_t
+Int32 = int32_t
+UInt32 = int32_t
+Int64 = int64_t
+UInt64 = uint64_t
+Single = float
+Double = double
 
 
 --[[
@@ -228,33 +228,27 @@ ffi.cdef[[
 	If the initial value is not specified, a value of '0' is used.
 --]]
 
-boolv = ffi.typeof("unsigned char[?]")
-bytev = ffi.typeof("unsigned char[?]")
-sbytev = ffi.typeof("char[?]")
-charv = ffi.typeof("int[?]")
-shortv = ffi.typeof("short[?]")
-ushortv = ffi.typeof("unsigned short[?]")
-intv = ffi.typeof("int[?]")
-uintv = ffi.typeof("unsigned int[?]")
-longv = ffi.typeof("__int64[?]")
-ulongv = ffi.typeof("unsigned __int64[?]")
-
-floatv = ffi.typeof("float[?]")
-doublev = ffi.typeof("double[?]")
-
-function floatVectorSize(vec)
-	return rshift(ffi.sizeof(vec),3)
+Array1D = function(columns, kind, initial)
+	initial = initial or ffi.new(kind)
+	return ffi.new(string.format("%s[%d]", kind, columns), initial)
 end
 
+Array2D = function(columns, rows, kind, initial)
+	initial = initial or ffi.new(kind)
+	return ffi.new(string.format("%s[%d][%d]", kind, rows, columns))
+end
 
-
+Array3D = function(columns, rows, depth, kind, initial)
+	initial = initial or ffi.new(kind)
+	return ffi.new(string.format("%s[%d][%d][%d]", kind, depth, rows, columns))
+end
 
 
 
 --[[
 	Native Memory Allocation
 --]]
-
+--[[
 function NAlloc(n, typename, init)
 	local data = nil
 	typename = typename or "unsigned char"
@@ -272,6 +266,7 @@ function NAlloc(n, typename, init)
 
 	return data
 end
+--]]
 
 function NSizeOf(thing)
 	return ffi.sizeof(thing)
@@ -333,38 +328,252 @@ function NSetBytes(dst, value, dstoffset, nbytes)
 	return nBytesToCopy
 end
 
--- PixelBufferRenderer.lua
+-- vec_func.lua
 
-class.Array2DAccessor()
+if not BanateCore_000 then
+require "000"
+end
 
-Array2DAccessor.Defaults = {
-	Data = nil,
-	Width = 0,
-	Height = 0,
-	TypeName = "unsigned char",
-	BytesPerElement = 1,
-	Alignment = 1,
+vec_func_included = true
+
+--[[
+	HELPER FUNCTIONS
+--]]
+vec2 = ffi.typeof("float[2]")
+vec3 = ffi.typeof("float[3]")
+vec4 = ffi.typeof("float[4]")
+
+
+-- A Vector and a scalar
+
+
+function vec3_apply1(res, a, op, func)
+	for i=0,2 do
+		res[i] = func(a[i], op)
+	end
+
+	return res
+end
+
+function vec3_apply1_self(self, op, func)
+	for i=0,2 do
+		self[i] = func(self[i], op)
+	end
+
+	return self
+end
+
+
+-- Two vectors
+
+function vec3_apply2(res, a, b, func)
+	for i=0,2 do
+		res[i] = func(a[i], b[i])
+	end
+
+	return res
+end
+
+function vec3_apply2_self(self, b, func)
+	for i=0,2 do
+		self[i] = func(self[i], b[i])
+	end
+
+	return self
+end
+
+
+
+local function vec3_tostring(v)
+	res={}
+
+	table.insert(res,'{')
+	for col = 0,2 do
+		table.insert(res,v[col])
+		if col < 2 then
+			table.insert(res,',')
+		end
+	end
+	table.insert(res,'}')
+
+	return table.concat(res)
+end
+
+--[[
+	Actual Math Functions
+--]]
+
+-- addition
+local function vec3_add(res, a, b)
+	return vec3_apply2(res, a, b, function(op1,op2) return op1 + op2 end)
+end
+
+local function vec3_add_new(a, b)
+	return vec3_add(vec3(), a, b)
+end
+
+local function vec3_add_self(a, b)
+	return vec3_add(self, a, b)
+end
+
+
+-- Subtraction
+local function vec3_sub(res, a, b)
+	return vec3_apply2(res, a, b, function(op1,op2) return op1-op2 end)
+end
+
+local function vec3_sub_new(a, b)
+	return vec3_sub(vec3(), a, b)
+end
+
+local function vec3_sub_self(a, b)
+	return vec3_sub(a, a, b)
+end
+
+
+-- Scale
+local function vec3_scale(res, a, b)
+	return vec3_apply2(res, a, b, function(op1,op2) return op1*op2 end)
+end
+
+local function vec3_scale_new(a, b)
+	return vec3_scale(vec3(), a, b)
+end
+
+local function vec3_scale_self(a, b)
+	return vec3_scale(a, a, b)
+end
+
+
+-- Scale by scalar
+local function vec3_scales(res, a, s)
+	return vec3_apply1(res, a, s, function(op1,s) return op1*s end)
+end
+
+local function vec3_scales_new(a, s)
+	return vec3_scales(vec3(), a, s)
+end
+
+local function vec3_scales_self(a, s)
+	return vec3_scales(a, a, s)
+end
+
+
+-- Cross product
+local function vec3_cross(res, u, v)
+	res[0] = u[1]*v[2] - v[1]*u[2];
+	res[1] = -u[0]*v[2] + v[0]*u[2];
+	res[2] = u[0]*v[1] - v[0]*u[1];
+
+	return res
+end
+
+local function vec3_cross_new(u, v)
+	return vec3_cross(vec3(), u,v)
+end
+
+
+-- Dot product
+local function vec3_dot(u, v)
+	return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
+end
+
+local function vec3_angle_between(u,v)
+	local tmp = vec3_dot(u,v)
+	return math.acos(tmp)
+end
+
+
+-- Length
+local function vec3_length_squared(u)
+	return vec3_dot(u,u)
+end
+
+local function vec3_length(u)
+	return math.sqrt(vec3_length_squared(u))
+end
+
+
+-- Normalize
+local function vec3_normalize(res, u)
+	local scalar = 1/vec3_length(u)
+	return vec3_scales(res, u, scalar)
+end
+
+local function vec3_normalize_new(u)
+	return vec3_normalize(vec3(), u)
+end
+
+local function vec3_normalize_self(u)
+	return vec3_normalize(u, u)
+end
+
+-- Distance
+local function vec3_distance(u, v)
+	return vec3_length(vec3_sub_new(u,v))
+end
+
+
+
+local function vec3_find_normal(res, point1, point2, point3)
+	local v1 = vec3_sub_new(point1, point2)
+	local v2 = vec3_sub_new(point2, point3)
+
+	return vec3_cross(res, v1, v2)
+end
+
+local function vec3_find_normal_new(point1, point2, point3)
+	return vec3_find_normal(vec3(), point1, point2, point3)
+end
+
+
+
+Vec3 = {
+	vec3 = vec3,
+
+	Add = vec3_add_new,
+	Sub = vec3_sub_new,
+	Mul = vec3_scale_new,
+	Muls = vec3_scales_new,
+	Div = vec3_div_new,
+	Divs = vec3_divs_new,
+
+	Dot = vec3_dot,
+	Cross = vec3_cross_new,
+
+	Length = vec3_length,
+
+	Distance = vec3_distance,
+	FindNormal = vec3_find_normal_new,
+	Normalize = vec3_normalize_new,
+	AngleBetween = vec3_angle_between,
+
+	tostring = vec3_tostring,
 }
+-- Array2DRenderer.lua
 
-
-function Array2DAccessor:_init(params)
-	params = params or ArrayAccessor.Defaults
-
-	self.TypeName = params.TypeName or Array2DAccessor.Defaults.TypeName
-	self.PtrTypeName = string.format("%s*",self.TypeName)
-
-	self.Width = params.Width or Array2DAccessor.Defaults.Width
-	self.Height = params.Height or Array2DAccessor.Defaults.Height
-	self.Extent = {self.Width, self.Height}
-
-	self.Data = params.Data
-	self.Alignment = params.Alignment or Array2DAccessor.Defaults.Alignment
-
-	self.BytesPerElement = params.BytesPerElement or Array2DAccessor.Defaults.BytesPerElement
-	self.BitsPerElement = params.BitsPerElement or self.BytesPerElement*8
+if not BanateCore_000 then
+require "Triangle"
+require "EFLA"
+require "TransferArray2D"
+require "glsl_math"
 end
 
-function Array2DAccessor:GetOffset(x,y)
+class.Array2DRenderer()
+
+
+function Array2DRenderer:_init(width, height, data, typename)
+	self.Data = data
+	self.Width = width
+	self.Height = height
+	self.TypeName = typename
+
+	self.BytesPerElement = ffi.sizeof(typename)
+	self.RowStride = ffi.sizeof(data[0])
+	self.ScratchRow = Array1D(self.Width, self.TypeName)
+end
+
+function Array2DRenderer:GetByteOffset(x,y)
 	if x<0 or x >= self.Width then
 		return nil
 	end
@@ -379,71 +588,18 @@ function Array2DAccessor:GetOffset(x,y)
 end
 
 -- Retrieve a pixel from the array
-function Array2DAccessor:GetElement(x, y)
-	local data = ffi.cast(self.TypeName, self.Data)
-	local offset = self:GetOffset(x,y)
-	local value = data[offset]
-
-	return value
+function Array2DRenderer:GetPixel(x, y)
+	return self.Data[y][x]
 end
 
 -- Do a SRC_COPY of the specified value into the buffer
 -- Do not worry about any alpha or anti aliasing
-function Array2DAccessor:SetElement(x, y, value)
-	local data = ffi.cast(self.TypeName, self.Data)
-	local offset = self:GetOffset(x,y)
-
-	data[offset] = value
+function Array2DRenderer:SetPixel(x, y, value)
+	self.Data[y][x] = value
 end
 
 
-function Array2DAccessor:SetElements(col, row, len, values)
-	local data = ffi.cast(self.TypeName, self.Data)
-	local offset = self:GetOffset(x,y)
-
-end
-
--- ArrayRenderer.lua
-
-class.ArrayRenderer()
-
-
-function ArrayRenderer:_init(accessor)
-	self.Accessor = accessor
-	self.Width = accessor.Width
-	self.Height = accessor.Height
-
-	self.ScratchRow = NAlloc(self.Width, self.Accessor.TypeName)
-end
-
-function ArrayRenderer:GetOffset(x,y)
-	if x<0 or x >= self.Width then
-		return nil
-	end
-
-	if y<0 or y >= self.Height then
-		return nil
-	end
-
-	local offset = (y*self.Width) + x
-
-	return offset
-end
-
--- Retrieve a pixel from the array
-function ArrayRenderer:GetPixel(x, y)
-	local value = self.Accessor:GetElement(x,y)
-	return value
-end
-
--- Do a SRC_COPY of the specified value into the buffer
--- Do not worry about any alpha or anti aliasing
-function ArrayRenderer:SetPixel(x, y, value)
-	self.Accessor:SetElement(x,y,value)
-end
-
-
-function ArrayRenderer:LineH(x, y, len, value)
+function Array2DRenderer:LineH(x, y, len, value)
 	local row = y
 	local x2 = x + len-1
 	if x < 0 then x = 0 end
@@ -451,19 +607,18 @@ function ArrayRenderer:LineH(x, y, len, value)
 	if x2 > self.Width-1 then x2 = self.Width-1 end
 
 	for i=x,x2 do
-		self.Accessor:SetElement(i, row, value)
+		self.Data[row][i] = value
 	end
 end
 
-function ArrayRenderer:SpanH(x, y, len, values)
-	local elemSize = self.Accessor.BytesPerElement
-	local rowSize = elemSize * len
-	local dstoffset = self.Accessor:GetOffset(x, y)*elemSize
+function Array2DRenderer:SpanH(x, y, len, values)
+	local rowSize = self.BytesPerElement * len
+	local dstoffset = self:GetByteOffset(x, y)
 
-	NCopyBytes(self.Accessor.Data, values, dstoffset, 0, rowSize)
+	NCopyBytes(self.Data, values, dstoffset, 0, rowSize)
 end
 
-function ArrayRenderer:LineV(x,y,len,value)
+function Array2DRenderer:LineV(x,y,len,value)
 	if x < 0 or x >= self.Width then return end
 
 	local y1 = y
@@ -472,101 +627,60 @@ function ArrayRenderer:LineV(x,y,len,value)
 	if y2 > self.Height-1 then y2 = self.Height-1 end
 
 	for row = y1,y2 do
-		self.Accessor:SetElement(x, row, value)
+		self.Data[row][x] = value
 	end
 end
 
-function ArrayRenderer:Line(x1, y1, x2, y2, value)
+function Array2DRenderer:Line(x1, y1, x2, y2, value)
 	local liner = EFLA_Iterator(x1, y1, x2, y2)
+
 	for x,y in liner do
 		x = math.floor(x)
 		y = math.floor(y)
 
-		self.Accessor:SetElement(x,y,value)
-	end
-end
-
-function maxwidth(x1,x2,x3)
-	local minx = math.min(math.min(x1, x2), x3)
-	local maxx = math.max(math.max(x1, x2), x3)
---print("Min/Max: ", minx, maxx)
-	local maxwidth = maxx-minx+1
-
-	return maxwidth
-end
-
---[[
-
-
-function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
-	local minX, minY, maxY,maxY = getTriangleBBox(x1, y1, x2, y2, x3, y3)
-
-	for y = minY, maxY do
-		for x = minX, maxX do
-			if insideTriangle(tri, x,y) then
-				self.Accessor:SetElement(x,y,value)
-			end
+		if x>0 and y>0 then
+			self.Data[y][x] = value
 		end
 	end
 end
---]]
 
 
-function ArrayRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
+function Array2DRenderer:FillTriangle(x1, y1, x2, y2, x3, y3, value)
 	local triscan = ScanTriangle (vec2(x1,y1), vec2(x2,y2), vec2(x3,y3))
 
-	local elemSize = self.Accessor.BytesPerElement
-	local maxWidth = maxwidth(x1, x2, x3)
-	local rowSize = maxWidth * elemSize
-	--local rowstore = NAlloc(maxWidth, self.Accessor.TypeName, value)
-	local remaining = 0
-
-		-- Fill the scrath row with the intended value
-	for i=1,maxWidth do
-		self.ScratchRow[i-1] = value
-	end
 
 	for lx, ly, len, rx, ry, lu, ru in triscan do
 		local lx1 = math.floor(lx+0.5)
 		local rx1 = math.floor(rx+0.5)
 		local newlen = rx1-lx1+1
---print(lx1, rx1, ly, newlen)
+
 		local x = lx1
 		local y = ly
 		local len = newlen
 		if len > 0 then
-			--self:LineH(x, y, len, value)
-			self:SpanH(x, y, len, self.ScratchRow)
+			self:LineH(x, y, len, value)
 		end
-		--local remaining = math.min((self.Width - x), len)
 	end
 end
 
-
-
-function ArrayRenderer:FillQuad(x1,y1, x2,y2, x3,y3, x4,y4, value)
+function Array2DRenderer:FillQuad(x1,y1, x2,y2, x3,y3, x4,y4, value)
 	self:FillTriangle(x1,y1, x2,y2, x3,y3, value)
 	self:FillTriangle(x1,y1, x3,y3, x4,y4, value)
 end
 
-function ArrayRenderer:FillRectangle(x,y,width,height, value)
-	-- Create a row
-	--local elemSize = self.Accessor.BytesPerElement
-	--local rowSize = width * elemSize
-	--local rowstore = NAlloc(width, self.Accessor.TypeName, value)
-
-	-- Fill the scrath row with the intended value
-	for i=1,width do
-		self.ScratchRow[i-1] = value
-	end
-
+function Array2DRenderer:FillRectangle(x,y,width,height, value)
 	for row =y,y+height-1 do
-		self:SpanH(x, row, width, self.ScratchRow)
+		self:LineH(x, row, width, value)
 	end
 end
 
-function ArrayRenderer:BitBlt(src,  dstX, dstY, srcBounds, driver, elementOp)
+function Array2DRenderer:BitBlt(src,  dstX, dstY, srcBounds, driver, elementOp)
 	TransferArray2D(self.Accessor, src,  dstX, dstY, srcBounds, driver, elementOp)
+end
+
+
+function Array2DRenderer.Create(width, height, data, typename)
+	return Array2DRenderer(width, height, data, typename)
 end
 --[[
 	base64.lua
@@ -578,6 +692,10 @@ end
 	The derivation of this code is from a public domain
 	implementation in 'C' by Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
 --]]
+
+if not BanateCore_000 then
+require "000"
+end
 
 base64={}
 base64.base64bytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"
@@ -718,68 +836,6 @@ function base64.decode(s)
 	-- string in full
 	return table.concat(b);
 end
--- ByteArray.lua
-
-
-ffi.cdef[[
-typedef struct {
-	unsigned int Length;
-	unsigned char *data;
-} array_b;
-]]
-
-
-ByteArray = nil
-ByteArray_mt = {
-	__index = {
-		new = function(self, size, init)
-			self.data = ffi.new("unsigned char[?]", size);
-			self.Length = size;
-			if init then
-				for i=0,size-1 do
-					self.data[i] = init
-				end
-			end
-			return self;
-		end,
-
-		CopyBytes = function(self, dstoffset, src, srcoffset, srclen)
-			dstoffset = dstoffset or 0
-			srcoffset = srcoffset or 0
-			srclen = srclen or 0
-
-			local dstBytesAvailable = self.Length - dstoffset
-			local nBytesToCopy = math.min(srclen, dstBytesAvailable)
-
-			-- Use the right offset
-			ffi.copy(self.data+dstoffset, src+srcoffset, nBytesToCopy)
-		end,
-
-		Copy = function(self, src, offset, len, srcoffset)
-			offset = offset or 0
-			len = len or src.Length
-
-			local nBytesAvailable = self.Length - offset
-			local nBytesToCopy = math.min(math.min(len, src.Length), nBytesAvailable)
-
-			-- Use the right offset
-			ffi.copy(self.data+offset, src.data, nBytesToCopy)
-		end,
-
-		Get = function(self, offset)
-			return self.data[offset]
-		end,
-
-		Put = function(self, value, offset)
-			self.data[offset] = value
-		end,
-	},
-	__tostring = function(self)
-		return string.format("Length: %d", self.Length);
-	end,
-}
-ByteArray = ffi.metatype("array_b", ByteArray_mt)
-
 --[[
     "Extremely Fast Line Algorithm"
 
@@ -842,9 +898,6 @@ function EFLA_Iterator(x1, y1, x2, y2, skiplast)
 	local j = 0 - decInc;
 	local i = 0 - incrementVal
 
---print("EFLA")
---print(shortLen, longLen, decInc, incrementVal, endVal)
---print("YLonger: ", yLonger)
 
 	if yLonger then
 		return function()
@@ -882,109 +935,6 @@ function EFLA_Iterator(x1, y1, x2, y2, skiplast)
 		end
 	end
 end
-
-
-class.FixedArray2D()
-
-
-function FixedArray2D:_init(width, height, typename, init)
-	width = width or 1
-	height = height or 1
-	typename = typename or "unsigned char"
-
-	self.TypeName = typename
-	self.PtrTypeName = string.format("%s*",self.TypeName)
-
-	--  Allocate the data buffer
-	local nelems = width * height
-	self.Data = NAlloc(nelems, typename, init)
-
-	-- Set other attributes
-	self.Width = width
-	self.Height = height
-	self.Length = width*height
-	self.SizeInBytes = NByteOffset(typename, self.Length)
-	self.BytesPerElement = NByteOffset(typename, 1)
-	self.BitsPerElement = self.BytesPerElement * 8
-end
-
-
-function FixedArray2D:__tostring()
-	return string.format("Type: %s\nWidth: %d Height: %d\nLength: %d\nBytes: %d\nBitsPerElement: %d",
-		self.TypeName, self.Width, self.Height, self.Length, self.SizeInBytes, self.BitsPerElement)
-end
-
-
---
--- Copy a numberr of elements from a source array to our array.
--- Can specify both source and destination offsets.
--- The offsets are specified in number of array elements.
--- They are turned into byte offsets, then native byte copy routine
--- is used.
---
-function FixedArray2D:Copy(src, dstoffset,srcoffset, srclen)
-	dstoffset = dstoffset or 0
-	srcoffset = srcoffset or 0
-	srclen = srclen or src.Length
-
-	local dstbyteOffset = NByteOffset(self.TypeName, dstoffset)
-	local srcbyteoffset = NByteOffset(self.TypeName, srcoffset)
-	local srcbytelen = NByteOffset(self.TypeName, srclen)
-
-	local bytesCopied = NCopyBytes(self.Data, src.Data,
-		dstbyteOffset,
-		srcbyteoffset, srcbytelen)
-
-	return bytesCopied
-end
-
-function FixedArray2D:GetOffset(col, row)
-	col = col or 0
-	row = row or 0
-
-	if col < 0 or col >= self.Width then return nil end
-	if row < 0 or row >= self.Height then return nil end
-
-	local offset = row * self.Width + col
-
-	return offset;
-end
-
-function FixedArray2D:Get(col, row)
-	local offset = self:GetOffset(col, row)
-	if not offset then return nil end
-
-	return self.Data[offset]
-end
-
-function FixedArray2D:GetElement(col, row)
-	return self:Get(col,row)
-end
-
-
-function FixedArray2D:Set(col, row,value)
-	local offset = self:GetOffset(col, row)
-	if not offset then return nil end
-
-	self.Data[offset] = value
-end
-
-function FixedArray2D:SetElement(col, row,value)
-	self:Set(col, row, value)
-end
-
-function FixedArray2D:SetElements(col, row, len, values)
-	local data = ffi.cast(self.PtrTypeName, self.Data)
-	local dstoffset = self:GetOffset(x,y)
-	local elemSize = NSizeOf(self.TypeName)
-	dstoffset = dstoffset * elemSize
-	srcoffset = 0
-	srclen = len*elemSize
-
-	NCopyBytes(data, values, dstoffset, srcoffset, srclen)
-end
-
-
 
 --=====================================
 -- This is public Domain Code
@@ -1483,8 +1433,13 @@ end
 
 
 
+if not BanateCore_000 then
+require "000"
+end
 
-local realv = floatv
+if not vec_func_included then
+require "vec_func"
+end
 
 -- Row ordering of elements
 local m4r = {
@@ -1522,9 +1477,11 @@ local mc431 = 7
 local mc432 = 11
 local mc433 = 15
 
+mat3 = ffi.typeof("double[9]")
+mat4 = ffi.typeof("double[16]")
 
 -- Identity matrix for a 4x4 matrix
-mat4_identity =  realv(16,1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+mat4_identity =  mat4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
 
 
 function mat4_new(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
@@ -1548,7 +1505,7 @@ function mat4_new(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
 	o = o or 0
 	p = p or 0
 
-	return realv(16,a,b,c,d, e,f,g,h, i,j,k,l, m,n,o,p)
+	return mat4(a,b,c,d, e,f,g,h, i,j,k,l, m,n,o,p)
 end
 
 
@@ -1583,13 +1540,14 @@ local function mat4_clone(m)
 end
 
 local function mat4_assign(a, b)
+	-- Could do a memcpy faster?
 	for i=0,15 do
 		a[i] = b[i]
 	end
 end
 
 local function mat4_get_col(m, col, roworder)
-	local res = realv(4)
+	local res = vec4()
 	res[0] = mat4_get(m, 0,col, roworder)
 	res[1] = mat4_get(m, 1,col, roworder)
 	res[2] = mat4_get(m, 2,col, roworder)
@@ -1609,7 +1567,7 @@ end
 
 
 local function mat4_get_row(m, row, roworder)
-	local res = realv(4)
+	local res = vec4()
 
 	res[0] = mat4_get(m, row,0,roworder)
 	res[1] = mat4_get(m, row,1,roworder)
@@ -1671,7 +1629,7 @@ local function mat4_get_diagonal(res, m)
 end
 
 local function mat4_get_diagonal_new(m)
-	return mat4_get_diagonal(realv(4), m)
+	return mat4_get_diagonal(vec4(4), m)
 end
 
 
@@ -1679,7 +1637,7 @@ end
 local function mat4_sub_determinant(m, i, j)
     local x, y, ii, jj;
     local ret;
-	local m3 = realv(9);
+	local m3 = mat3();
 
 	function m3G(row,col)
 		return m3[row*3+col]
@@ -1856,7 +1814,7 @@ local function mat4_transform_pt(res, m, pt)
 end
 
 local function mat4_transform_pt_new(m, pt)
-	return mat4_transform_pt(realv(3), m, pt)
+	return mat4_transform_pt(vec3(), m, pt)
 end
 
 -- Transform a Vector
@@ -1870,7 +1828,7 @@ local function mat4_transform_vec(res, m, vec)
 end
 
 local function mat4_transform_vec_new(m, vec)
-	return mat4_transform_pt(realv(3), m, vec)
+	return mat4_transform_pt(vec3(), m, vec)
 end
 
 
@@ -1940,7 +1898,9 @@ Mat4 = {
 	tostring = mat4_tostring,
 }
 -- Pixel.lua
-
+if not BanateCore_000 then
+require "000"
+end
 
 ffi.cdef[[
 
@@ -2226,7 +2186,11 @@ PixelBGRA_mt = {
 PixelBGRA = ffi.metatype("pixel_BGRA_b", PixelBGRA_mt)
 
 
+if not BanateCore_000 then
+require "000"
+end
 
+RectI_Included = true
 
 ffi.cdef[[
 	typedef struct {
@@ -2315,6 +2279,9 @@ function CalculateTargetFrame(dstX, dstY, dstWidth, dstHeight,
 	local targetFrame = dstFrame:Intersection(targetBounds)
 
 	return targetFrame, dstFrame, srcRect
+end
+if not RectI_Included then
+require "RectI"
 end
 
 function SrcCopy(dst, src)
@@ -2556,273 +2523,41 @@ function ScanTriangle ( v1, v2, v3)
 end
 
 
-
-
 --[[
-	HELPER FUNCTIONS
+print("Triangle.lua - TEST")
+
+
+local x1 = 1
+local y1 = 1
+local x2 = 5
+local y2 = 5
+local x3 = 1
+local y3 = 10
+
+--x1, y1, x2, y2, x3, y3 = sortTriangle(x1, y1,x2, y2, x3, y3)
+--print(x1, y1, x2, y2, x3, y3)
+
+
+--local triscan = ScanTriangle (x1, y1,x2, y2, x3, y3)
+local triscan = ScanTriangle (10,1, 1,5, 10,10)
+
+for lx,ly, len, rx,ry, lu, ru in triscan do
+	print(lx, ly, rx, ry)
+end
+
 --]]
-vec2 = function(x,y) return floatv(2,x or 0,y or 0) end
-vec3 = function(x,y,z) return floatv(3,x or 0,y or 0,z or 0) end
-vec4 = function(x,y,z,w) return floatv(4,x or 0,y or 0,z or 0,w or 0) end
-
--- A Vector and a scalar
-function vec3_apply1_new(a, op, func)
-	local res = floatv(3)
-	for i=0,2 do
-		res[i] = func(a[i], op)
-	end
-
-	return res
-end
-
-function vec3_apply1(res, a, op, func)
-	for i=0,2 do
-		res[i] = func(a[i], op)
-	end
-
-	return res
-end
-
-function vec3_apply1_self(self, op, func)
-	for i=0,2 do
-		self[i] = func(self[i], op)
-	end
-
-	return self
-end
-
-
--- Two vectors
-function vec3_apply2_new(a, b, func)
-	local res = floatv(3)
-	for i=0,2 do
-		res[i] = func(a[i], b[i])
-	end
-
-	return res
-end
-
-function vec3_apply2(res, a, b, func)
-	for i=0,2 do
-		res[i] = func(a[i], b[i])
-	end
-
-	return res
-end
-
-function vec3_apply2_self(self, b, func)
-	for i=0,2 do
-		self[i] = func(self[i], b[i])
-	end
-
-	return self
-end
-
-local function vec3_tostring(v)
-	res={}
-
-	table.insert(res,'{')
-	for col = 0,2 do
-		table.insert(res,v[col])
-		if col < 2 then
-			table.insert(res,',')
-		end
-	end
-	table.insert(res,'}')
-
-	return table.concat(res)
-end
-
---[[
-	Actual Math Functions
---]]
-
--- addition
-local function vec3_add(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1 + op2 end)
-end
-
-local function vec3_add_new(a, b)
-	return vec3_add(floatv(3), a, b)
-end
-
-local function vec3_add_self(a, b)
-	return vec3_add(self, a, b)
-end
-
-
--- Subtraction
-local function vec3_sub(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1-op2 end)
-end
-
-local function vec3_sub_new(a, b)
-	return vec3_sub(floatv(3), a, b)
-end
-
-local function vec3_sub_self(a, b)
-	return vec3_sub(a, a, b)
-end
-
-
--- Scale
-local function vec3_scale(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1*op2 end)
-end
-
-local function vec3_scale_new(a, b)
-	return vec3_scale(floatv(3), a, b)
-end
-
-local function vec3_scale_self(a, b)
-	return vec3_scale(a, a, b)
-end
-
-
--- Scale by scalar
-local function vec3_scales(res, a, s)
-	return vec3_apply1(res, a, s, function(op1,s) return op1*s end)
-end
-
-local function vec3_scales_new(a, s)
-	return vec3_scales(floatv(3), a, s)
-end
-
-local function vec3_scales_self(a, s)
-	return vec3_scales(a, a, s)
-end
-
-
--- Cross product
-local function vec3_cross(res, u, v)
-	res[0] = u[1]*v[2] - v[1]*u[2];
-	res[1] = -u[0]*v[2] + v[0]*u[2];
-	res[2] = u[0]*v[1] - v[0]*u[1];
-
-	return res
-end
-
-local function vec3_cross_new(u, v)
-	return vec3_cross(floatv(3), u,v)
-end
-
-
--- Dot product
-local function vec3_dot(u, v)
-	return u[0]*v[0] + u[1]*v[1] + u[2]*v[2]
-end
-
-local function vec3_angle_between(u,v)
-	local tmp = vec3_dot(u,v)
-	return math.acos(tmp)
-end
-
-
--- Length
-local function vec3_length_squared(u)
-	return vec3_dot(u,u)
-end
-
-local function vec3_length(u)
-	return math.sqrt(vec3_length_squared(u))
-end
-
-
--- Normalize
-local function vec3_normalize(res, u)
-	local scalar = 1/vec3_length(u)
-	return vec3_scales(res, u, scalar)
-end
-
-local function vec3_normalize_new(u)
-	return vec3_normalize(floatv(3), u)
-end
-
-local function vec3_normalize_self(u)
-	return vec3_normalize(u, u)
-end
-
--- Distance
-local function vec3_distance(u, v)
-	return vec3_length(vec3_sub_new(u,v))
-end
-
-
-
-local function vec3_find_normal(res, point1, point2, point3)
-	local v1 = vec3_sub_new(point1, point2)
-	local v2 = vec3_sub_new(point2, point3)
-
-	return vec3_cross(res, v1, v2)
-end
-
-local function vec3_find_normal_new(point1, point2, point3)
-	return vec3_find_normal(vec3(), point1, point2, point3)
-end
-
-
-
-Vec3 = {
-	vec3 = vec3,
-
-	Add = vec3_add_new,
-	Sub = vec3_sub_new,
-	Mul = vec3_scale_new,
-	Muls = vec3_scales_new,
-	Div = vec3_div_new,
-	Divs = vec3_divs_new,
-
-	Dot = vec3_dot,
-	Cross = vec3_cross_new,
-
-	Length = vec3_length,
-
-	Distance = vec3_distance,
-	FindNormal = vec3_find_normal_new,
-	Normalize = vec3_normalize_new,
-	AngleBetween = vec3_angle_between,
-
-	tostring = vec3_tostring,
-}
 --
 -- zzz.lua
 --
---[[
-local Array2DAccessor = require "Array2DAccessor"
-local ArrayRenderer = require "ArrayRenderer"
-local base64 = require "base64"
-local BaseTypes = require "BaseTypes"
-local ByteArray = require "ByteArray"
-local class = require "class"
-local EFLA = require "EFLA"
-local FixedArray2D = require "FixedArray2D"
-local glsl_math = require "glsl_math"
-local glsl_types = require "glsl_types"
-local GrayConverter = require "GrayConverter"
-local hashes = require "hashes"
-local hmac = require "hmac"
-local matrix = require "matrix"
-local NativeMemory = require "NativeMemory"
-local NativeTypes = require "NativeTypes"
-local Pixel = require "Pixel"
-local PixelBuffer = require "PixelBuffer"
-local PixelBufferRenderer = require "PixelBufferRenderer"
-local RectI = require "RectI"
-local sha1 = require "sha1"
-local sha2 = require "sha2"
-local TransferArray2D = require "TransferArray2D"
-local Triangle = require "Triangle"
-local vec_func = require "vec_func"
-local w32_ops = require "w32_ops"
---]]
 
 return {
-	ArrayRenderer = ArrayRenderer,
+	Array2DRenderer = Array2DRenderer,
 	Base64 = base64,
 	class = class,
-	FixedArray2D = FixedArray2D,
+	Array1D = Array1D,
+	Array2D = Array2D,
+	Array3D = Array3D,
 	Matrix = matrix,
-	NativeMemory = NativeMemory,
 	Pixel = Pixel,
 	RectI = RectI,
 	Vec = Vec3,

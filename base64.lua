@@ -8,7 +8,10 @@
 	The derivation of this code is from a public domain
 	implementation in 'C' by Luiz Henrique de Figueiredo <lhf@tecgraf.puc-rio.br>
 --]]
+
+if not BanateCore_000 then
 require "000"
+end
 
 base64={}
 base64.base64bytes = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/"

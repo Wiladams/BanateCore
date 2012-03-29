@@ -1,21 +1,21 @@
+-- vec_func.lua
+
+if not BanateCore_000 then
 require "000"
+end
+
+vec_func_included = true
 
 --[[
 	HELPER FUNCTIONS
 --]]
-vec2 = function(x,y) return floatv(2,x or 0,y or 0) end
-vec3 = function(x,y,z) return floatv(3,x or 0,y or 0,z or 0) end
-vec4 = function(x,y,z,w) return floatv(4,x or 0,y or 0,z or 0,w or 0) end
+vec2 = ffi.typeof("float[2]")
+vec3 = ffi.typeof("float[3]")
+vec4 = ffi.typeof("float[4]")
+
 
 -- A Vector and a scalar
-function vec3_apply1_new(a, op, func)
-	local res = floatv(3)
-	for i=0,2 do
-		res[i] = func(a[i], op)
-	end
 
-	return res
-end
 
 function vec3_apply1(res, a, op, func)
 	for i=0,2 do
@@ -35,14 +35,6 @@ end
 
 
 -- Two vectors
-function vec3_apply2_new(a, b, func)
-	local res = floatv(3)
-	for i=0,2 do
-		res[i] = func(a[i], b[i])
-	end
-
-	return res
-end
 
 function vec3_apply2(res, a, b, func)
 	for i=0,2 do
@@ -59,6 +51,8 @@ function vec3_apply2_self(self, b, func)
 
 	return self
 end
+
+
 
 local function vec3_tostring(v)
 	res={}
@@ -85,7 +79,7 @@ local function vec3_add(res, a, b)
 end
 
 local function vec3_add_new(a, b)
-	return vec3_add(floatv(3), a, b)
+	return vec3_add(vec3(), a, b)
 end
 
 local function vec3_add_self(a, b)
@@ -99,7 +93,7 @@ local function vec3_sub(res, a, b)
 end
 
 local function vec3_sub_new(a, b)
-	return vec3_sub(floatv(3), a, b)
+	return vec3_sub(vec3(), a, b)
 end
 
 local function vec3_sub_self(a, b)
@@ -113,7 +107,7 @@ local function vec3_scale(res, a, b)
 end
 
 local function vec3_scale_new(a, b)
-	return vec3_scale(floatv(3), a, b)
+	return vec3_scale(vec3(), a, b)
 end
 
 local function vec3_scale_self(a, b)
@@ -127,7 +121,7 @@ local function vec3_scales(res, a, s)
 end
 
 local function vec3_scales_new(a, s)
-	return vec3_scales(floatv(3), a, s)
+	return vec3_scales(vec3(), a, s)
 end
 
 local function vec3_scales_self(a, s)
@@ -145,7 +139,7 @@ local function vec3_cross(res, u, v)
 end
 
 local function vec3_cross_new(u, v)
-	return vec3_cross(floatv(3), u,v)
+	return vec3_cross(vec3(), u,v)
 end
 
 
@@ -177,7 +171,7 @@ local function vec3_normalize(res, u)
 end
 
 local function vec3_normalize_new(u)
-	return vec3_normalize(floatv(3), u)
+	return vec3_normalize(vec3(), u)
 end
 
 local function vec3_normalize_self(u)

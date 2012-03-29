@@ -2,10 +2,9 @@
 local ppath = package.path..';..\\?.lua'
 package.path = ppath;
 
---vec = require "vec_func"
-local BC = require "BanateCore"
-local vec = BC.Vec
-local vec3 = vec.vec3
+require "vec_func"
+
+local vec = Vec3
 
 local v1 = vec3(1,2,3)
 local v2 = vec3(4,5,6)

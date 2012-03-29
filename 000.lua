@@ -1,3 +1,5 @@
+BanateCore_000 = true
+
 ffi = require"ffi"
 C = ffi.C
 
@@ -157,10 +159,12 @@ class = setmetatable({},{
         return _class(...)
     end,
     __index = function(tbl,key)
+--[[
         if key == 'class' then
             io.stderr:write('require("pl.class").class is deprecated. Use require("pl.class")\n')
             return class
         end
+--]]
         local env = _G
         return function(...)
             local c = _class(...)
@@ -188,34 +192,30 @@ class = setmetatable({},{
 --]]
 
 
-bool = ffi.typeof("unsigned char")
-byte = ffi.typeof("unsigned char")
-sbyte = ffi.typeof("char")
-char = ffi.typeof("int")
-short = ffi.typeof("short")
-ushort = ffi.typeof("unsigned short")
-int = ffi.typeof("int")
-uint = ffi.typeof("unsigned int")
-long = ffi.typeof("__int64")
-ulong = ffi.typeof("unsigned __int64")
+uint8_t = ffi.typeof("uint8_t")
+int8_t = ffi.typeof("char")
+int16_t = ffi.typeof("int16_t")
+uint16_t = ffi.typeof("unsigned short")
+int32_t = ffi.typeof("int32_t")
+uint32_t = ffi.typeof("uint32_t")
+int64_t = ffi.typeof("int64_t")
+uint64_t = ffi.typeof("uint64_t")
 
 float = ffi.typeof("float")
 double = ffi.typeof("double")
 
+bool = ffi.typeof("unsigned char")
 
 -- Base types matching those found in the .net frameworks
-ffi.cdef[[
-	typedef unsigned char	Byte;
-	typedef int16_t			Int16;
-	typedef int16_t			UInt16;
-	typedef int32_t			Int32;
-	typedef uint32_t		UInt32;
-	typedef int64_t			Int64;
-	typedef uint64_t		UInt64;
-	typedef float			Single;
-	typedef double			Double;
-
-]]
+Byte = uint8_t
+Int16 = int16_t
+UInt16 = uint16_t
+Int32 = int32_t
+UInt32 = int32_t
+Int64 = int64_t
+UInt64 = uint64_t
+Single = float
+Double = double
 
 
 --[[
@@ -228,33 +228,27 @@ ffi.cdef[[
 	If the initial value is not specified, a value of '0' is used.
 --]]
 
-boolv = ffi.typeof("unsigned char[?]")
-bytev = ffi.typeof("unsigned char[?]")
-sbytev = ffi.typeof("char[?]")
-charv = ffi.typeof("int[?]")
-shortv = ffi.typeof("short[?]")
-ushortv = ffi.typeof("unsigned short[?]")
-intv = ffi.typeof("int[?]")
-uintv = ffi.typeof("unsigned int[?]")
-longv = ffi.typeof("__int64[?]")
-ulongv = ffi.typeof("unsigned __int64[?]")
-
-floatv = ffi.typeof("float[?]")
-doublev = ffi.typeof("double[?]")
-
-function floatVectorSize(vec)
-	return rshift(ffi.sizeof(vec),3)
+Array1D = function(columns, kind, initial)
+	initial = initial or ffi.new(kind)
+	return ffi.new(string.format("%s[%d]", kind, columns), initial)
 end
 
+Array2D = function(columns, rows, kind, initial)
+	initial = initial or ffi.new(kind)
+	return ffi.new(string.format("%s[%d][%d]", kind, rows, columns))
+end
 
-
+Array3D = function(columns, rows, depth, kind, initial)
+	initial = initial or ffi.new(kind)
+	return ffi.new(string.format("%s[%d][%d][%d]", kind, depth, rows, columns))
+end
 
 
 
 --[[
 	Native Memory Allocation
 --]]
-
+--[[
 function NAlloc(n, typename, init)
 	local data = nil
 	typename = typename or "unsigned char"
@@ -272,6 +266,7 @@ function NAlloc(n, typename, init)
 
 	return data
 end
+--]]
 
 function NSizeOf(thing)
 	return ffi.sizeof(thing)

@@ -1,9 +1,10 @@
+if not BanateCore_000 then
 require "000"
+end
 
-
-local vec = require "vec_func"
-
-local realv = floatv
+if not vec_func_included then
+require "vec_func"
+end
 
 -- Row ordering of elements
 local m4r = {
@@ -41,9 +42,11 @@ local mc431 = 7
 local mc432 = 11
 local mc433 = 15
 
+mat3 = ffi.typeof("double[9]")
+mat4 = ffi.typeof("double[16]")
 
 -- Identity matrix for a 4x4 matrix
-mat4_identity =  realv(16,1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+mat4_identity =  mat4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
 
 
 function mat4_new(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
@@ -67,7 +70,7 @@ function mat4_new(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
 	o = o or 0
 	p = p or 0
 
-	return realv(16,a,b,c,d, e,f,g,h, i,j,k,l, m,n,o,p)
+	return mat4(a,b,c,d, e,f,g,h, i,j,k,l, m,n,o,p)
 end
 
 
@@ -102,13 +105,14 @@ local function mat4_clone(m)
 end
 
 local function mat4_assign(a, b)
+	-- Could do a memcpy faster?
 	for i=0,15 do
 		a[i] = b[i]
 	end
 end
 
 local function mat4_get_col(m, col, roworder)
-	local res = realv(4)
+	local res = vec4()
 	res[0] = mat4_get(m, 0,col, roworder)
 	res[1] = mat4_get(m, 1,col, roworder)
 	res[2] = mat4_get(m, 2,col, roworder)
@@ -128,7 +132,7 @@ end
 
 
 local function mat4_get_row(m, row, roworder)
-	local res = realv(4)
+	local res = vec4()
 
 	res[0] = mat4_get(m, row,0,roworder)
 	res[1] = mat4_get(m, row,1,roworder)
@@ -190,7 +194,7 @@ local function mat4_get_diagonal(res, m)
 end
 
 local function mat4_get_diagonal_new(m)
-	return mat4_get_diagonal(realv(4), m)
+	return mat4_get_diagonal(vec4(4), m)
 end
 
 
@@ -198,7 +202,7 @@ end
 local function mat4_sub_determinant(m, i, j)
     local x, y, ii, jj;
     local ret;
-	local m3 = realv(9);
+	local m3 = mat3();
 
 	function m3G(row,col)
 		return m3[row*3+col]
@@ -375,7 +379,7 @@ local function mat4_transform_pt(res, m, pt)
 end
 
 local function mat4_transform_pt_new(m, pt)
-	return mat4_transform_pt(realv(3), m, pt)
+	return mat4_transform_pt(vec3(), m, pt)
 end
 
 -- Transform a Vector
@@ -389,7 +393,7 @@ local function mat4_transform_vec(res, m, vec)
 end
 
 local function mat4_transform_vec_new(m, vec)
-	return mat4_transform_pt(realv(3), m, vec)
+	return mat4_transform_pt(vec3(), m, vec)
 end
 
 

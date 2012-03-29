@@ -1,4 +1,6 @@
+if not RectI_Included then
 require "RectI"
+end
 
 function SrcCopy(dst, src)
 	return src

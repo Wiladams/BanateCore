@@ -1,5 +1,8 @@
+if not BanateCore_000 then
 require "000"
+end
 
+RectI_Included = true
 
 ffi.cdef[[
 	typedef struct {

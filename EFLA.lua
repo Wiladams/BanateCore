@@ -60,9 +60,6 @@ function EFLA_Iterator(x1, y1, x2, y2, skiplast)
 	local j = 0 - decInc;
 	local i = 0 - incrementVal
 
---print("EFLA")
---print(shortLen, longLen, decInc, incrementVal, endVal)
---print("YLonger: ", yLonger)
 
 	if yLonger then
 		return function()
