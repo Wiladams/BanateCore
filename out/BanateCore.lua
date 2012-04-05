@@ -192,6 +192,7 @@ class = setmetatable({},{
 --]]
 
 
+bool = ffi.typeof("bool")
 uint8_t = ffi.typeof("uint8_t")
 int8_t = ffi.typeof("char")
 int16_t = ffi.typeof("int16_t")
@@ -204,7 +205,6 @@ uint64_t = ffi.typeof("uint64_t")
 float = ffi.typeof("float")
 double = ffi.typeof("double")
 
-bool = ffi.typeof("unsigned char")
 
 -- Base types matching those found in the .net frameworks
 Byte = uint8_t
@@ -336,51 +336,33 @@ end
 
 vec_func_included = true
 
+-- Useful constants
+
+kEpsilon = 1.0e-6
+
+
 --[[
 	HELPER FUNCTIONS
 --]]
-vec2 = ffi.typeof("float[2]")
-vec3 = ffi.typeof("float[3]")
-vec4 = ffi.typeof("float[4]")
+vec2 = ffi.typeof("double[2]")
+vec3 = ffi.typeof("double[3]")
+vec4 = ffi.typeof("double[4]")
+
+function IsZero(a)
+    return (math.abs(a) < kEpsilon);
+end
 
 
 -- A Vector and a scalar
 
+local function vec3_assign(a, b)
+	a[0] = b[0]
+	a[1] = b[1]
+	a[2] = b[2]
 
-function vec3_apply1(res, a, op, func)
-	for i=0,2 do
-		res[i] = func(a[i], op)
-	end
-
-	return res
+	return a
 end
 
-function vec3_apply1_self(self, op, func)
-	for i=0,2 do
-		self[i] = func(self[i], op)
-	end
-
-	return self
-end
-
-
--- Two vectors
-
-function vec3_apply2(res, a, b, func)
-	for i=0,2 do
-		res[i] = func(a[i], b[i])
-	end
-
-	return res
-end
-
-function vec3_apply2_self(self, b, func)
-	for i=0,2 do
-		self[i] = func(self[i], b[i])
-	end
-
-	return self
-end
 
 
 
@@ -402,10 +384,31 @@ end
 --[[
 	Actual Math Functions
 --]]
+-- Equal
+local function vec3_eq(a, b)
+	return a[0] == b[0] and a[1] == b[1] and a[2] == b[2]
+end
+
+
+-- negate
+local function vec3_neg(res, a)
+	res[0] = -a[0]
+	res[1] = -a[1]
+	res[2] = -a[2]
+
+	return res
+end
+
+local function vec3_neg_new(a)
+	return vec3_neg(vec3(), a)
+end
 
 -- addition
 local function vec3_add(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1 + op2 end)
+	res[0] = a[0]+b[0]
+	res[1] = a[1]+b[1]
+	res[2] = a[2]+b[2]
+	return res
 end
 
 local function vec3_add_new(a, b)
@@ -413,13 +416,16 @@ local function vec3_add_new(a, b)
 end
 
 local function vec3_add_self(a, b)
-	return vec3_add(self, a, b)
+	return vec3_add(a, a, b)
 end
 
 
 -- Subtraction
 local function vec3_sub(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1-op2 end)
+	res[0] = a[0]-b[0]
+	res[1] = a[1]-b[1]
+	res[2] = a[2]-b[2]
+	return res
 end
 
 local function vec3_sub_new(a, b)
@@ -433,7 +439,10 @@ end
 
 -- Scale
 local function vec3_scale(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1*op2 end)
+	res[0] = a[0]*b[0]
+	res[1] = a[1]*b[1]
+	res[2] = a[2]*b[2]
+	return res
 end
 
 local function vec3_scale_new(a, b)
@@ -447,15 +456,22 @@ end
 
 -- Scale by scalar
 local function vec3_scales(res, a, s)
-	return vec3_apply1(res, a, s, function(op1,s) return op1*s end)
+	res[0] = a[0]*s
+	res[1] = a[1]*s
+	res[2] = a[2]*s
+
+	return res
 end
 
 local function vec3_scales_new(a, s)
-	return vec3_scales(vec3(), a, s)
+	return vec3(a[0]*s, a[1]*s, a[2]*s)
 end
 
 local function vec3_scales_self(a, s)
-	return vec3_scales(a, a, s)
+	a[0]=a[0]*s
+	a[1]=a[1]*s
+	a[2]=a[2]*s
+	return a
 end
 
 
@@ -479,8 +495,7 @@ local function vec3_dot(u, v)
 end
 
 local function vec3_angle_between(u,v)
-	local tmp = vec3_dot(u,v)
-	return math.acos(tmp)
+	return math.acos(vec3_dot(u,v))
 end
 
 
@@ -497,7 +512,12 @@ end
 -- Normalize
 local function vec3_normalize(res, u)
 	local scalar = 1/vec3_length(u)
-	return vec3_scales(res, u, scalar)
+
+	res[0] = u[0] * scalar
+	res[1] = u[1] * scalar
+	res[2] = u[2] * scalar
+
+	return res
 end
 
 local function vec3_normalize_new(u)
@@ -530,13 +550,17 @@ end
 
 Vec3 = {
 	vec3 = vec3,
+	Assign = vec3_assign,
 
 	Add = vec3_add_new,
+	AddSelf = vec3_add_self,
 	Sub = vec3_sub_new,
-	Mul = vec3_scale_new,
-	Muls = vec3_scales_new,
+	Scale = vec3_scale_new,
+	Scales = vec3_scales_new,
 	Div = vec3_div_new,
 	Divs = vec3_divs_new,
+	Neg = vec3_neg_new,
+	Eq = vec3_eq,
 
 	Dot = vec3_dot,
 	Cross = vec3_cross_new,
@@ -546,6 +570,8 @@ Vec3 = {
 	Distance = vec3_distance,
 	FindNormal = vec3_find_normal_new,
 	Normalize = vec3_normalize_new,
+	NormalizeSelf = vec3_normalize_self,
+
 	AngleBetween = vec3_angle_between,
 
 	tostring = vec3_tostring,
@@ -1430,211 +1456,324 @@ function angle(u, v)
 	end
 end
 
+--=====================================
+--	Extras, like Processing
+--=====================================
 
+function map(a, rlo, rhi, slo, shi)
+	return slo + ((a-rlo)/(rhi-rlo) * (shi-slo))
+end
 
+Mat_Included = true
+
+if not vec_func_included then
+require "01_vec_func"
+end
+
+local function mat_assign(a, b, n)
+	for row=0,n-1 do
+		for col =0,n-1 do
+			a[row][col] = b[row][col]
+		end
+	end
+
+	return a
+end
+
+local function mat_clean(a, n)
+	for row=0,n-1 do
+		for col =0,n-1 do
+			a[row][col] = 0
+		end
+	end
+
+	return a
+end
+
+local function mat_is_zero(m, n)
+	for row=0,n-1 do
+		for col=0,n-1 do
+			if not IsZero(m[row][col]) then
+				return false
+			end
+		end
+	end
+end
+
+local function mat_get_col(res, m, col, n)
+	for i=0,n-1 do
+		res[i] = m[i][col]
+	end
+
+	return res
+end
+
+local function mat_set_col(m, col, vec, n)
+	for i=0,n-1 do
+		m[i][col] = vec[i]
+	end
+
+	return m
+end
+
+local function mat_get_row(res, m, row, n)
+	for i=0,n-1 do
+		res[i] = m[row][i]
+	end
+	return res
+end
+
+local function mat_set_row(m, row, vec, n)
+	for i=0,n-1 do
+		m[row][i] = vec[i]
+	end
+
+	return m
+end
+
+local function mat_get_diagonal(res, m, n)
+	for i=0,n-1 do
+		res[i] = m[i][i]
+	end
+
+	return res
+end
+
+function mat_transpose(res, a, n)
+	for row=0,n-1 do
+		for col=0,n-1 do
+			res[row][col] = a[col][row]
+		end
+	end
+	return res
+end
+
+function mat_add_mat(res, a, b, n)
+	for row=0,n-1 do
+		for col=0,n-1 do
+			res[row][col] = a[row][col] + b[row][col]
+		end
+	end
+	return res
+end
+
+function mat_sub_mat(res, a, b, n)
+	for row=0,n-1 do
+		for col=0,n-1 do
+			res[row][col] = a[row][col] - b[row][col]
+		end
+	end
+	return res
+end
+
+function mat_mul_mat(res, a, b, n)
+	for row=0,n-1 do
+		for col=0,n-1 do
+			res[row][col] = 0
+			for k=0,n-1 do
+				res[row][col] = res[row][col] + a[row][k]*b[k][col]
+			end
+		end
+	end
+
+	return res
+end
+
+function mat_scale_s(res, a, s, n)
+	for row=0,n-1 do
+		for col=0,n-1 do
+			res[row][col] = a[row][col] * s
+		end
+	end
+	return res
+end
+
+function mat_scale(res, a, b, n)
+	for row=0,n-1 do
+		for col=0,n-1 do
+			res[row][col] = a[row][col] * b[row][col]
+		end
+	end
+	return res
+end
+
+SquareMatrix = {
+	Assign = mat_assign,
+	Clean = mat_clean,
+
+	GetColumn = mat_get_col,
+	GetDiagonal = mat_get_diagonal,
+	GetRow = mat_get_row,
+
+	SetColumn = mat_set_col,
+	SetRow = mat_set_row,
+
+	Add = mat_add_mat,
+	Sub = mat_sub_mat,
+	Mul = mat_mul_mat,
+	Scale = mat_scale,
+	ScaleS = mat_scale_s,
+
+	Transpose = mat_transpose,
+
+	IsIdentity = mat_is_identity,
+	IsZero = mat_is_zero,
+}
+Mat3_Included = true
 
 if not BanateCore_000 then
 require "000"
 end
 
 if not vec_func_included then
-require "vec_func"
+require "01_vec_func"
 end
 
--- Row ordering of elements
-local m4r = {
-	{0,1,2,3},
-	{4,5,6,7},
-	{8,9,10,11},
-	{12,13,14,15}
-}
+if not Mat_Included then
+require "Mat"
+end
 
--- Column ordering of elements
-local m4c = {
-	{0,4,8,12},
-	{1,5,9,13},
-	{2,6,10,14},
-	{3,7,11,15}
-}
-
-local mc400 = 0
-local mc401 = 4
-local mc402 = 8
-local mc403 = 12
-
-local mc410 = 1
-local mc411 = 5
-local mc412 = 9
-local mc413 = 13
-
-local mc420 = 2
-local mc421 = 6
-local mc422 = 10
-local mc423 = 14
-
-local mc430 = 3
-local mc431 = 7
-local mc432 = 11
-local mc433 = 15
-
-mat3 = ffi.typeof("double[9]")
-mat4 = ffi.typeof("double[16]")
+mat3 = ffi.typeof("double[3][3]")
 
 -- Identity matrix for a 4x4 matrix
-mat4_identity =  mat4(1,0,0,0, 0,1,0,0, 0,0,1,0, 0,0,0,1)
+mat3_identity =  mat3({1,0,0}, {0,1,0}, {0,0,1})
 
 
-function mat4_new(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
+function mat3_new(a,b,c,d,e,f,g,h,i)
 	a = a or 0
 	b = b or 0
 	c = c or 0
-	d = d or 0
 
+	d = d or 0
 	e = e or 0
 	f = f or 0
+
 	g = g or 0
 	h = h or 0
-
 	i = i or 0
-	j = j or 0
-	k = k or 0
-	l = l or 0
 
-	m = m or 0
-	n = n or 0
-	o = o or 0
-	p = p or 0
+	return mat3({a,b,c}, {d,e,f}, {g,h,i})
+end
 
-	return mat4(a,b,c,d, e,f,g,h, i,j,k,l, m,n,o,p)
+local function mat3_assign(a, b)
+	for row=0,2 do
+		for col =0,2 do
+			a[row][col] = b[row][col]
+		end
+	end
+
+	return a
+end
+
+local function mat3_clone(m)
+	return mat3_assign(mat3(), m)
+end
+
+local function mat3_get_col(m, col)
+	return SquareMatrix.GetColumn(vec3(), m, col, 3)
+end
+
+local function mat3_set_col(m, col, vec)
+	return SquareMatrix.SetColumn(m, col, vec, 3)
 end
 
 
-local function mat4_getoffset(row,col,roworder)
-	if not roworder then
-		-- column order
-		return col*4 + row
-	else
-		-- row order
-		return row*4 + col
+local function mat3_get_row(m, row)
+	return vec3(m[row][0], m[row][1], m[row][2])
+end
+
+local function mat3_set_row(m, row, vec)
+	m[row][0] = vec[0]
+	m[row][1] = vec[1]
+	m[row][2] = vec[2]
+end
+
+
+
+local function mat3_get_rows(m)
+	return m[0], m[1], m[2]
+end
+
+local function mat3_set_rows(m, row0, row1, row2)
+	mat3_set_row(m, 0, row0)
+	mat3_set_row(m, 1, row1)
+	mat3_set_row(m, 2, row2)
+end
+
+
+
+local function mat3_get_diagonal(res, m)
+	res[0] = m[0][0]
+	res[1] = m[1][1]
+	res[2] = m[2][2]
+
+	return res
+end
+
+local function mat3_get_diagonal_new(m)
+	return SquareMatrix.GetDiagonal(vec3(), m, 3)
+end
+
+
+-- Matrix Addition
+local function mat3_add_mat3(res, a, b)
+	for row=0,2 do
+		res[row][0] = a[row][0]+b[row][0]
+		res[row][1] = a[row][1]+b[row][1]
+		res[row][2] = a[row][2]+b[row][2]
 	end
 end
 
-local function mat4_get(m, row, col, roworder)
-	return m[mat4_getoffset(row,col,roworder)]
+local function mat3_add_mat3_new(a, b)
+	return mat3_add_mat3(mat3(), a, b)
 end
 
-local function mat4_set(m, row, col, value, roworder)
-	m[mat4_getoffset(row,col,roworder)] = value
-	return m
-end
 
-local function mat4_clone(m)
-
-	local res = mat4_new(
-		m[0],m[1],m[2],m[3],
-		m[4],m[5],m[6],m[7],
-		m[8],m[9],m[10],m[11],
-		m[12],m[13],m[14],m[15])
-
-	return res
-end
-
-local function mat4_assign(a, b)
-	-- Could do a memcpy faster?
-	for i=0,15 do
-		a[i] = b[i]
+-- Matrix Subtraction
+local function mat3_sub_mat3(res, a, b)
+	for row=0,2 do
+		res[row][0] = a[row][0]-b[row][0]
+		res[row][1] = a[row][1]-b[row][1]
+		res[row][2] = a[row][2]-b[row][2]
 	end
 end
 
-local function mat4_get_col(m, col, roworder)
-	local res = vec4()
-	res[0] = mat4_get(m, 0,col, roworder)
-	res[1] = mat4_get(m, 1,col, roworder)
-	res[2] = mat4_get(m, 2,col, roworder)
-	res[3] = mat4_get(m, 3,col, roworder)
-
-	return res
+local function mat3_sub_mat3_new(a, b)
+	return mat3_sub_mat3(mat3(), a, b)
 end
 
-local function mat4_set_col(m, col, vec, roworder)
-	mat4_set(m, 0, col, vec[0], roworder)
-	mat4_set(m, 1, col, vec[0], roworder)
-	mat4_set(m, 2, col, vec[0], roworder)
-	mat4_set(m, 3, col, vec[0], roworder)
-
-	return m
-end
-
-
-local function mat4_get_row(m, row, roworder)
-	local res = vec4()
-
-	res[0] = mat4_get(m, row,0,roworder)
-	res[1] = mat4_get(m, row,1,roworder)
-	res[2] = mat4_get(m, row,2,roworder)
-	res[3] = mat4_get(m, row,3,roworder)
-
-	return res
-end
-
-local function mat4_set_row(m, row, vec, roworder)
-	mat4_set(m, row, 0, vec[0], roworder)
-	mat4_set(m, row, 1, vec[0], roworder)
-	mat4_set(m, row, 2, vec[0], roworder)
-	mat4_set(m, row, 3, vec[0], roworder)
-
-	return m
-end
 
 -- Matrix Multiplication
-local function mat4_mul_mat4(res, a, b, roworder)
-	function A(row,col)
-		return mat4_get(a, row, col, roworder)
+
+local function mat3_mul_mat3(res, a, b)
+	local n = 3
+
+	for i=0,n-1 do
+		for j=0,n-1 do
+			res[i][j]=0
+			for k=0,n-1 do
+				res[i][j] = res[i][j] + a[i][k]*b[k][j]
+			end
+		end
 	end
-
-	function B(row,col)
-		return mat4_get(b, row, col, roworder)
-	end
-
-	function PS(row,col, value)
-		mat4_set(res, row, col, value, roworder)
-	end
-
-	for i = 0,3 do
-		local ai0=A(i,0);
-		local ai1=A(i,1);
-		local ai2=A(i,2);
-		local ai3=A(i,3);
-
-		PS(i,0, ai0 * B(0,0) + ai1 * B(1,0) + ai2 * B(2,0) + ai3 * B(3,0));
-		PS(i,1, ai0 * B(0,1) + ai1 * B(1,1) + ai2 * B(2,1) + ai3 * B(3,1));
-		PS(i,2, ai0 * B(0,2) + ai1 * B(1,2) + ai2 * B(2,2) + ai3 * B(3,2));
-		PS(i,3, ai0 * B(0,3) + ai1 * B(1,3) + ai2 * B(2,3) + ai3 * B(3,3));
-	end
-
 	return res
 end
 
-local function mat4_mul_mat4_new(a, b, roworder)
-	return mat4_mul_mat4(mat4_new(), a, b, roworder)
+
+
+local function mat3_mul_mat3_new(a, b)
+	return mat_mul_mat(mat3(), a, b, 3)
 end
 
-local function mat4_get_diagonal(res, m)
-	res[0] = m[mc400]
-	res[1] = m[mc411]
-	res[2] = m[mc422]
-	res[3] = m[mc433]
 
-	return res
-end
-
-local function mat4_get_diagonal_new(m)
-	return mat4_get_diagonal(vec4(4), m)
+local function mat3_transpose_new(a)
+	return SquareMatrix.Transpose(mat3(), a, 3)
 end
 
 
 
-local function mat4_sub_determinant(m, i, j)
+--[[
+local function mat3_sub_determinant(m, i, j)
     local x, y, ii, jj;
     local ret;
 	local m3 = mat3();
@@ -1673,8 +1812,7 @@ local function mat4_sub_determinant(m, i, j)
 end
 
 
-function mat4_inverse(mInverse, m)
-
+function mat3_inverse(mInverse, m)
     local i, j;
     local det =0
 	local detij;
@@ -1683,9 +1821,9 @@ function mat4_inverse(mInverse, m)
     for i = 0,3 do
 		local subdet = 0
 		if band(i,0x1) > 0 then
-			subdet = (-m[i] * mat4_sub_determinant(m, 0, i))
+			subdet = (-m[i] * mat3_sub_determinant(m, 0, i))
 		else
-			subdet = (m[i] * mat4_sub_determinant(m, 0,i))
+			subdet = (m[i] * mat3_sub_determinant(m, 0,i))
 		end
 
 		det = det + subdet
@@ -1696,7 +1834,7 @@ function mat4_inverse(mInverse, m)
     -- calculate inverse
     for i = 0,3  do
         for j = 0,3 do
-            detij = mat4_sub_determinant(m, j, i);
+            detij = mat3_sub_determinant(m, j, i);
 			local scratch
 			if (band((i+j), 0x1) > 0) then
 				scratch = (-detij * det)
@@ -1711,51 +1849,150 @@ function mat4_inverse(mInverse, m)
 	return mInverse
 end
 
-function mat4_inverse_new(m)
-	return mat4_inverse(mat4_new(), m)
+function mat3_inverse_new(m)
+	return mat3_inverse(mat3(), m)
 end
+--]]
+
+
 
 --[[
 		TRANSFORMATION  MATRICES
 --]]
+local function mat3_create_translation(res, x, y)
+	res[2][0] = x
+	res[2][1] = y
+
+	return res
+end
+
+local function mat3_create_translation_new(x,y)
+	return mat3_create_translation(mat3_clone(mat3_identity), x, y)
+end
+
 -- Matrix creation
-local function mat4_create_scale(res, x, y, z)
-	mat4_assign(res, mat4_identity)
-
-	mat4_set(res, 0,0, x)
-	mat4_set(res, 1,1, y)
-	mat4_set(res, 2,2, z)
+local function mat3_create_scale(res, x, y, z)
+	res[0][0] = x
+	res[1][1] = y
+	res[2][2] = z
 
 	return res
 end
 
-local function mat4_create_scale_new(x,y,z)
-	return mat4_create_scale(mat4_new(), x, y, z)
+local function mat3_create_scale_new(x,y,z)
+	x = x or 1
+	y = y or 1
+	z = z or 1
+
+	return mat3_create_scale(mat3_clone(mat3_identity), x, y, z)
 end
 
--- Create Translation Matrix
-local function mat4_create_translation(res, x, y, z)
-	mat4_assign(res, mat4_identity)
-
-	mat4_set(res, 0, 3, x)
-	mat4_set(res, 1, 3, y)
-	mat4_set(res, 2, 3, z)
-
-	return res
-end
-
-local function mat4_create_translation_new(x,y,z)
-	return mat4_create_translation(mat4_new(), x, y, z)
-end
 
 
 -- Create Rotation Matrix
-local function mat4_create_rotation(res, angle, x, y, z)
-	local mag = 1/math.sqrt(x*x+y*y+z*z)
+local function mat3_create_rotatex(res, angle)
+	local c = math.cos(angle)
+	local s = math.sin(angle)
+
+	mat3_assign(res, mat3_identity)
+
+	res[1][1] = c;	res[1][2] = -s
+	res[2][1] = s;	res[2][2] = c
+
+	return res
+end
+
+local function mat3_create_rotatex_new(angle)
+	return mat3_create_rotatex(mat3(), angle)
+end
+
+local function mat3_create_rotatey(res, angle)
+	local c = math.cos(angle)
+	local s = math.sin(angle)
+
+	mat3_assign(res, mat3_identity)
+
+	res[0][0] = c;	res[0][2] = s
+	res[2][0] = -s;	res[2][2] = c
+
+	return res
+end
+
+local function mat3_create_rotatey_new(angle)
+	return mat3_create_rotatey(mat3(), angle)
+end
+
+
+local function mat3_create_rotatez(res, angle)
+	local c = math.cos(angle)
+	local s = math.sin(angle)
+
+	mat3_assign(res, mat3_identity)
+
+	res[0][0] = c;	res[0][1] = -s
+	res[1][0] = s;	res[1][1] = c
+
+	return res
+end
+
+local function mat3_create_rotatez_new(angle)
+	return mat3_create_rotatez(mat3(), angle)
+end
+
+
+local function mat3_axis_angle_rotation(res, angle, x, y, z)
+    local c = math.cos(angle)
+	local s = math.sin(angle);
+    local t = 1.0 - c;
+
+    local nAxis = Vec3.Normalize(vec3(x,y,z));
+
+    -- intermediate values
+    local tx = t*nAxis[0];
+	local ty = t*nAxis[1];
+	local tz = t*nAxis[2];
+
+    local sx = s*nAxis[0];
+	local sy = s*nAxis[1];
+	local sz = s*nAxis[2];
+
+    local txy = tx*nAxis[1];
+	local tyz = tx*nAxis[2];
+	local txz = tx*nAxis[2];
+
+    -- set matrix
+    res[0][0] = tx*nAxis[0] + c;
+    res[0][1] = txy - sz;
+    res[0][2] = txz + sy;
+
+    res[1][0] = txy + sz;
+    res[1][1] = ty*nAxis[1] + c;
+    res[1][2] = tyz - sx;
+
+    res[2][0] = txz - sy;
+    res[2][1] = tyz + sx;
+    res[2][2] = tz*nAxis[2] + c;
+
+    return res;
+end
+
+local function mat3_axis_angle_rotation_new(angle, x, y, z)
+	return mat3_axis_angle_rotation(mat3(), angle, x, y, z)
+end
+
+
+--[[
+local function mat3_create_rotation(res, angle, x, y, z)
+	local mag = math.sqrt(x*x+y*y+z*z)
 	local s = math.sin(angle)
 	local c = math.cos(angle)
 
-	mat4_assign(res, mat4_identity)
+	if mag == 0 then
+		mat3_assign(res, mat3_identity)
+		return res
+	end
+
+	mag = 1/mag
 
 	-- Rotation matrix is normalized
 	x = x * mag
@@ -1774,26 +2011,365 @@ local function mat4_create_rotation(res, angle, x, y, z)
 
 	local one_c = 1 - c;
 
-	mat4_set(res, 0,0, (one_c*xx) + c)
-	mat4_set(res, 0,1, (one_c*xy) - zs)
-	mat4_set(res, 0,2, (one_c*zx) + ys)
-	mat4_set(res, 0,3, 0)
+	res[0][0] =(one_c*xx) + c
+	res[0][1] =(one_c*xy) - zs
+	res[0][2] =(one_c*zx) + ys
 
-	mat4_set(res, 1,0, (one_c*xy) + zs)
-	mat4_set(res, 1,1, (one_c*yy) + c)
-	mat4_set(res, 1,2, (one_c*yz) - xs)
-	mat4_set(res, 1,3, 0)
+	res[1][0] =(one_c*xy) + zs
+	res[1][1] =(one_c*yy) + c
+	res[1][2] =(one_c*yz) - xs
 
-	mat4_set(res, 2,0, (one_c*zx) -ys)
-	mat4_set(res, 2,1, (one_c*yz) +xs)
-	mat4_set(res, 2,2, (one_c*zz) + c)
-	mat4_set(res, 2,3, 0)
+	res[2][0] =(one_c*zx) -ys
+	res[2][1] =(one_c*yz) +xs
+	res[2][2] =(one_c*zz) + c
 
-	mat4_set(res, 3,0, 0)
-	mat4_set(res, 3,1, 0)
-	mat4_set(res, 3,2, 0)
-	mat4_set(res, 3,3, 1)
+	return res
+end
 
+local function mat3_create_rotation_new(angle, x, y, z)
+	return mat3_create_rotation(mat3(), angle, x, y, z)
+end
+--]]
+
+
+-- Transform a Point
+local function mat3_mul_vec3(res, m, v)
+	res[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2]
+	res[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2]
+	res[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2]
+
+	return res
+end
+
+local function mat3_mul_vec3_new(m, v)
+	return mat3_mul_vec3(vec3(), m, v)
+end
+
+
+
+
+
+local function mat3_tostring(m)
+	res={}
+
+	table.insert(res,'{\n')
+	for row = 0,2 do
+		table.insert(res,'{')
+		for col = 0,2 do
+			table.insert(res,m[row][col])
+			if col < 2 then
+				table.insert(res,',')
+			end
+		end
+		table.insert(res,'}')
+		if row < 2 then
+			table.insert(res, ',\n')
+		end
+	end
+	table.insert(res, '}\n')
+
+	return table.concat(res)
+end
+
+function mat3_is_zero(m)
+	return SquareMatrix.IsZero(m,3)
+end
+
+
+
+Mat3 = {
+	new = mat3_new,
+	Clone = mat3_clone,
+	Assign = mat3_assign,
+	Clean = function(m) return SquareMatrix.Clean(m,3) end,
+
+	Identity = mat3_identity,
+	GetColumn = mat3_get_col,
+	SetColumn = mat3_set_col,
+
+	GetRow = mat3_get_row,
+	SetRow = mat3_set_row,
+	SetRows = mat3_set_rows,
+
+	GetDiagonal = mat3_get_diagonal_new,
+
+	Inverse = mat3_inverse_new,
+	Transpose = mat3_transpose_new,
+
+	Mul = mat3_mul_mat3_new,
+	MulVec3 = mat3_mul_vec3_new,
+
+	CreateRotation = mat3_axis_angle_rotation_new,
+	CreateRotateX = mat3_create_rotatex_new,
+	CreateRotateY = mat3_create_rotatey_new,
+	CreateRotateZ = mat3_create_rotatez_new,
+
+
+	CreateScale = mat3_create_scale_new,
+	CreateTranslation = mat3_create_translation_new,
+
+	TransformNormal = mat3_transform_vec_new,
+
+	IsIdentity = mat_is_identity,
+	IsZero = mat3_is_zero,
+
+	tostring = mat3_tostring,
+}
+
+--
+-- matrix.lua
+--
+if not BanateCore_000 then
+require "000"
+end
+
+if not vec_func_included then
+require "01_vec_func"
+end
+
+if not Mat_Included then
+require "Mat"
+end
+
+if not Mat3_Included then
+require "Mat3"
+end
+
+
+mat4 = ffi.typeof("double[4][4]")
+
+-- Identity matrix for a 4x4 matrix
+mat4_identity =  mat4({1,0,0,0}, {0,1,0,0}, {0,0,1,0}, {0,0,0,1})
+
+
+function mat4_new(a,b,c,d,e,f,g,h,i,j,k,l,m,n,o,p)
+	a = a or 0
+	b = b or 0
+	c = c or 0
+	d = d or 0
+
+	e = e or 0
+	f = f or 0
+	g = g or 0
+	h = h or 0
+
+	i = i or 0
+	j = j or 0
+	k = k or 0
+	l = l or 0
+
+	m = m or 0
+	n = n or 0
+	o = o or 0
+	p = p or 0
+
+	return mat4({a,b,c,d}, {e,f,g,h}, {i,j,k,l}, {m,n,o,p})
+end
+
+
+
+local function mat4_clone(m)
+	return SquareMatrix.Assign(mat4(), m, 4)
+end
+
+local function mat4_assign(a, b)
+	return SquareMatrix.Assign(a, b,4)
+end
+
+local function mat4_get_col(res, m, col)
+	return SquareMatrix.GetColumn(res, m, col, 4)
+end
+
+local function mat4_get_col_new(m,col)
+	return mat4_get_col(vec4(), m, col)
+end
+
+local function mat4_set_col(m, col, vec)
+	return SquareMatrix.SetColumn(m, col, vec, 4)
+end
+
+
+local function mat4_get_row(res, m, row)
+	return SquareMatrix.GetRow(res, m, row, 4)
+end
+
+local function mat4_get_row_new(m, row)
+	return mat4_get_row(vec4(), m, row)
+end
+
+local function mat4_set_row(m, row, vec)
+	return SquareMatrix.SetRow(m, row, vec, 4)
+end
+
+-- Matrix Addition
+local function mat4_add_mat4_new(a,b)
+	return SquareMatrix.Add(mat4(), a, b, 4)
+end
+
+-- Matrix Subtraction
+local function mat4_sub_mat4_new(a,b)
+	return SquareMatrix.Sub(mat4(), a, b, 4)
+end
+
+-- Matrix Multiplication
+local function mat4_mul_mat4_new(a, b)
+	return SquareMatrix.Mul(mat4(), a, b, 4)
+end
+
+-- Multiply matrix by Column vector
+-- MxV
+-- Where
+--		M == 4x4 matrix
+--		V == 4x1 column matrix
+--
+-- MulColumn
+--	0[0,0]	4[0,1]	8[0,2]	12[0,3]
+--	1[1,0]	5[1,1]	9[1,2]	13[1,3]
+--	2[2,0]	6[2,1]	10[2,2]	14[2,3]
+--	3[3,0]	7[3,1]	11[3,2]	15[3,3]
+--
+function mat4_mat4_mul_vec4(res, m,v,n)
+    res = res4();
+
+    res[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2] + m[0][3]*v[3];
+    res[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2] + m[1][3]*v[3];
+    res[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2] + m[2][3]*v[3];
+    res[3] = m[3][0]*v[0] + m[3][1]*v[1] + m[3][2]*v[2] + m[3][3]*v[3];
+
+    return res;
+end
+
+function mat4_mat4_mul_vec4_new(m,v,n)
+	return mat4_mat4_mul_vec4(vec4(), m, v, n)
+end
+
+-- Multiply Row vector by maxtrix
+-- V x M
+-- Where
+--		V == 1x4 row matrix
+--		M == 4x4 matrix
+--
+-- MulRow
+--
+function mat4_vec4_mul_mat4(res, v,m,n)
+
+    res[0] = m[0][0]*v[0] + m[1][0]*v[1]+ m[2][0]*v[2] + m[3][0]*v[3];
+    res[1] = m[0][1]*v[0] + m[1][1]*v[1]+ m[2][1]*v[2] + m[3][1]*v[3];
+    res[2] = m[0][2]*v[0] + m[1][2]*v[1]+ m[2][2]*v[2] + m[3][2]*v[3];
+    res[3] = m[0][3]*v[0] + m[1][3]*v[1]+ m[2][3]*v[2] + m[3][3]*v[3];
+
+    return res;
+end
+
+function mat4_vec4_mul_mat4_new(v,m,n)
+	return mat4_vec4_mul_mat4(vec4(), v,m,n)
+end
+
+
+
+
+local function mat4_transpose_new(a)
+	return SquareMatrix.Transpose(mat4(), a, 4)
+end
+
+local function mat4_get_diagonal_new(m)
+	return SquareMatrix.GetDiagonal(vec4(), m, 4)
+end
+
+
+
+
+
+-- Get the Inverse
+--	0[0,0]	4[0,1]	8[0,2]	12[0,3]
+--	1[1,0]	5[1,1]	9[1,2]	13[1,3]
+--	2[2,0]	6[2,1]	10[2,2]	14[2,3]
+--	3[3,0]	7[3,1]	11[3,2]	15[3,3]
+
+local function mat4_affine_inverse_new(mat)
+    local result = mat4();
+
+    -- compute upper left 3x3 matrix determinant
+    local cofactor0 = mat[1][1]*mat[2][2] - mat[2][1]*mat[1][2];
+    local cofactor4 = mat[2][0]*mat[1][2] - mat[1][0]*mat[2][2];
+    local cofactor8 = mat[1][0]*mat[1][1] - mat[2][0]*mat[1][1];
+    local det = mat[0][0]*cofactor0 + mat[0][1]*cofactor4 + mat[0][2]*cofactor8;
+
+	if IsZero( det ) then
+        assert( false ,"Matrix44::Inverse() -- singular matrix\n");
+        return result;
+    end
+
+    -- create adjunct matrix and multiply by 1/det to get upper 3x3
+    local invDet = 1.0/det;
+    result[0][0] = invDet*cofactor0;
+    result[1][0] = invDet*cofactor4;
+    result[2][0] = invDet*cofactor8;
+
+    result[0][1] = invDet*(mat[2][1]*mat[0][2] - mat[0][1]*mat[2][2]);
+    result[1][1] = invDet*(mat[0][0]*mat[2][2] - mat[2][0]*mat[0][2]);
+    result[2][1] = invDet*(mat[2][0]*mat[0][1] - mat[0][0]*mat[2][1]);
+
+    result[0][2] = invDet*(mat[0][1]*mat[1][2] - mat[1][1]*mat[0][2]);
+    result[1][2] = invDet*(mat[1][0]*mat[0][2] - mat[0][0]*mat[1][2]);
+    result[2][2] = invDet*(mat[0][0]*mat[1][1] - mat[1][0]*mat[0][1]);
+
+    -- multiply -translation by inverted 3x3 to get its inverse
+    result[0][3] = -result[0][0]*mat[0][3] - result[0][1]*mat[1][3] - result[0][2]*mat[2][3];
+    result[1][3] = -result[1][0]*mat[0][3] - result[1][1]*mat[1][3] - result[1][2]*mat[2][3];
+    result[2][3] = -result[2][0]*mat[0][3] - result[2][1]*mat[1][3] - result[2][2]*mat[2][3];
+
+	return result;
+end
+
+
+
+
+--[[
+		TRANSFORMATION  MATRICES
+--]]
+-- Matrix creation
+local function mat4_create_scale(res, x, y, z)
+	mat4_assign(res, mat4_identity)
+
+	res[0][0] = x
+	res[1][1] = y
+	res[2][2] = z
+
+	return res
+end
+
+local function mat4_create_scale_new(x,y,z)
+	return mat4_create_scale(mat4_new(), x, y, z)
+end
+
+-- Create Translation Matrix
+local function mat4_create_translation(res, x, y, z)
+	mat4_assign(res, mat4_identity)
+
+	res[0][3] = x
+	res[1][3] = y
+	res[2][3] = z
+
+	return res
+end
+
+local function mat4_create_translation_new(x,y,z)
+	return mat4_create_translation(mat4_new(), x, y, z)
+end
+
+
+-- Create Rotation Matrix
+local function mat4_inject_rotation_mat3(res, src)
+	SquareMatrix.Assign(res, src, 3)
+end
+
+
+local function mat4_create_rotation(res, angle, x, y, z)
+	SquareMatrix.Assign(res, mat4_identity, 4)
+
+	local rot3 = Mat3.CreateRotation(angle, x, y, z)
+	SquareMatrix.Assign(res, rot3, 3)
 
 	return res
 end
@@ -1803,12 +2379,55 @@ local function mat4_create_rotation_new(angle, x, y, z)
 end
 
 
+
+
+
+
+
+function mat4_create_perspective_new(fFov, fAspect, zMin, zMax)
+	local res = mat4_clone(mat4_identity)
+
+    local yMax = zMin * math.tan(fFov * 0.5);
+    local yMin = -yMax;
+	local xMin = yMin * fAspect;
+    local xMax = -xMin;
+
+	res[0] = (2.0 * zMin) / (xMax - xMin);
+	res[5] = (2.0 * zMin) / (yMax - yMin);
+	res[8] = (xMax + xMin) / (xMax - xMin);
+	res[9] = (yMax + yMin) / (yMax - yMin);
+	res[10] = -((zMax + zMin) / (zMax - zMin));
+	res[11] = -1.0;
+	res[14] = -((2.0 * (zMax*zMin))/(zMax - zMin));
+	res[15] = 0.0;
+
+	return res
+end
+
+
+local function mat4_create_orthographic_new(xMin, xMax, yMin, yMax, zMin, zMax)
+	local res = mat4_assign(mat4_new(), mat4_identity)
+
+	res[0] = 2.0 / (xMax - xMin);
+	res[5] = 2.0 / (yMax - yMin);
+	res[10] = -2.0 / (zMax - zMin);
+	res[12] = -((xMax + xMin)/(xMax - xMin));
+	res[13] = -((yMax + yMin)/(yMax - yMin));
+	res[14] = -((zMax + zMin)/(zMax - zMin));
+	res[15] = 1.0;
+
+	return res
+end
+
 -- Transform a Point
--- Need to include the 'w'
-local function mat4_transform_pt(res, m, pt)
-	res[0] = m[mc400]*pt[0] + m[mc401]*pt[1] + m[mc402]*pt[2] + m[mc403]
-	res[1] = m[mc410]*pt[0] + m[mc411]*pt[1] + m[mc412]*pt[2] + m[mc413]
-	res[2] = m[mc420]*pt[0] + m[mc421]*pt[1] + m[mc422]*pt[2] + m[mc423]
+-- Matrix Point multiplication
+-- This is a MxV multiplication where the pt
+-- is a column vector
+--
+local function mat4_transform_pt(res, m, v)
+	res[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2] + m[0][3]
+	res[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2] + m[1][3]
+	res[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2] + m[2][3]
 
 	return res
 end
@@ -1819,16 +2438,16 @@ end
 
 -- Transform a Vector
 -- Need to ignore the 'w', as it is '0' for a vector
-local function mat4_transform_vec(res, m, vec)
-	res[0] = m[mc400]*vec[0] + m[mc401]*vec[1] + m[mc402]*vec[2]
-	res[1] = m[mc410]*vec[0] + m[mc411]*vec[1] + m[mc412]*vec[2]
-	res[2] = m[mc420]*vec[0] + m[mc421]*vec[1] + m[mc422]*vec[2]
+local function mat4_transform_vec(res, m, v)
+	res[0] = m[0][0]*v[0] + m[0][1]*v[1] + m[0][2]*v[2]
+	res[1] = m[1][0]*v[0] + m[1][1]*v[1] + m[1][2]*v[2]
+	res[2] = m[2][0]*v[0] + m[2][1]*v[1] + m[2][2]*v[2]
 
 	return res
 end
 
-local function mat4_transform_vec_new(m, vec)
-	return mat4_transform_pt(vec3(), m, vec)
+local function mat4_transform_vec_new(m, v)
+	return mat4_transform_pt(vec3(), m, v)
 end
 
 
@@ -1855,7 +2474,7 @@ local function mat4_tostring(m, roworder)
 	for row = 0,3 do
 		table.insert(res,'{')
 		for col = 0,3 do
-			table.insert(res,mat4_get(m, row,col))
+			table.insert(res,m[row][col])
 			if col < 3 then
 				table.insert(res,',')
 			end
@@ -1870,29 +2489,51 @@ local function mat4_tostring(m, roworder)
 	return table.concat(res)
 end
 
+function mat4_is_zero(m)
+	return SquareMatrix.IsZero(m,4)
+end
+
+
 Mat4 = {
 	new = mat4_new,
 	Clone = mat4_clone,
 	Assign = mat4_assign,
+	Clean = function(m) return SquareMatrix.Clean(m,4) end,
 
 	Identity = mat4_identity,
-	GetColumn = mat4_get_col,
+	GetColumn = mat4_get_col_new,
 	SetColumn = mat4_set_col,
 
-	GetRow = mat4_get_row,
+	GetRow = mat4_get_row_new,
 	SetRow = mat4_set_row,
 
 	GetDiagonal = mat4_get_diagonal_new,
 
-	Multiply = mat4_mul_mat4_new,
+	Add = mat4_add_mat4_new,
+	Sub = mat4_sub_mat4_new,
+	Mul = mat4_mul_mat4_new,
+	PostMulColumn = mat4_mat4_mul_vec4_new,
+	PreMulRow = mat4_vec4_mul_mat4_new,
 	Inverse = mat4_inverse_new,
+	AffineInverse = mat4_affine_inverse_new,
 
 	CreateRotation = mat4_create_rotation_new,
+	CreateRotateX = mat4_create_rotatex_new,
+	CreateRotateY = mat4_create_rotatey_new,
+	CreateRotateZ = mat4_create_rotatez_new,
+	InjectRotationMatrix = mat4_inject_rotation_mat3,
+
 	CreateScale = mat4_create_scale_new,
 	CreateTranslation = mat4_create_translation_new,
 
+	CreateOrthographic = mat4_create_orthographic_new,
+	CreatePerspective = mat4_create_perspective_new,
+
 	TransformPoint = mat4_transform_pt_new,
 	TransformNormal = mat4_transform_vec_new,
+
+	IsIdentity = mat_is_identity,
+	IsZero = mat4_is_zero,
 
 	vec4_tostring = vec4_tostring,
 	tostring = mat4_tostring,
@@ -2522,30 +3163,6 @@ function ScanTriangle ( v1, v2, v3)
 	end
 end
 
-
---[[
-print("Triangle.lua - TEST")
-
-
-local x1 = 1
-local y1 = 1
-local x2 = 5
-local y2 = 5
-local x3 = 1
-local y3 = 10
-
---x1, y1, x2, y2, x3, y3 = sortTriangle(x1, y1,x2, y2, x3, y3)
---print(x1, y1, x2, y2, x3, y3)
-
-
---local triscan = ScanTriangle (x1, y1,x2, y2, x3, y3)
-local triscan = ScanTriangle (10,1, 1,5, 10,10)
-
-for lx,ly, len, rx,ry, lu, ru in triscan do
-	print(lx, ly, rx, ry)
-end
-
---]]
 --
 -- zzz.lua
 --
@@ -2562,3 +3179,4 @@ return {
 	RectI = RectI,
 	Vec = Vec3,
 }
+

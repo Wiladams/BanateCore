@@ -492,6 +492,11 @@ function angle(u, v)
 	end
 end
 
+--=====================================
+--	Extras, like Processing
+--=====================================
 
-
+function map(a, rlo, rhi, slo, shi)
+	return slo + ((a-rlo)/(rhi-rlo) * (shi-slo))
+end
 

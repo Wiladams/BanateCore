@@ -165,27 +165,3 @@ function ScanTriangle ( v1, v2, v3)
 	end
 end
 
-
---[[
-print("Triangle.lua - TEST")
-
-
-local x1 = 1
-local y1 = 1
-local x2 = 5
-local y2 = 5
-local x3 = 1
-local y3 = 10
-
---x1, y1, x2, y2, x3, y3 = sortTriangle(x1, y1,x2, y2, x3, y3)
---print(x1, y1, x2, y2, x3, y3)
-
-
---local triscan = ScanTriangle (x1, y1,x2, y2, x3, y3)
-local triscan = ScanTriangle (10,1, 1,5, 10,10)
-
-for lx,ly, len, rx,ry, lu, ru in triscan do
-	print(lx, ly, rx, ry)
-end
-
---]]

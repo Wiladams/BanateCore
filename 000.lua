@@ -192,6 +192,7 @@ class = setmetatable({},{
 --]]
 
 
+bool = ffi.typeof("bool")
 uint8_t = ffi.typeof("uint8_t")
 int8_t = ffi.typeof("char")
 int16_t = ffi.typeof("int16_t")
@@ -204,7 +205,6 @@ uint64_t = ffi.typeof("uint64_t")
 float = ffi.typeof("float")
 double = ffi.typeof("double")
 
-bool = ffi.typeof("unsigned char")
 
 -- Base types matching those found in the .net frameworks
 Byte = uint8_t

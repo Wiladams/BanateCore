@@ -6,51 +6,33 @@ end
 
 vec_func_included = true
 
+-- Useful constants
+
+kEpsilon = 1.0e-6
+
+
 --[[
 	HELPER FUNCTIONS
 --]]
-vec2 = ffi.typeof("float[2]")
-vec3 = ffi.typeof("float[3]")
-vec4 = ffi.typeof("float[4]")
+vec2 = ffi.typeof("double[2]")
+vec3 = ffi.typeof("double[3]")
+vec4 = ffi.typeof("double[4]")
+
+function IsZero(a)
+    return (math.abs(a) < kEpsilon);
+end
 
 
 -- A Vector and a scalar
 
+local function vec3_assign(a, b)
+	a[0] = b[0]
+	a[1] = b[1]
+	a[2] = b[2]
 
-function vec3_apply1(res, a, op, func)
-	for i=0,2 do
-		res[i] = func(a[i], op)
-	end
-
-	return res
+	return a
 end
 
-function vec3_apply1_self(self, op, func)
-	for i=0,2 do
-		self[i] = func(self[i], op)
-	end
-
-	return self
-end
-
-
--- Two vectors
-
-function vec3_apply2(res, a, b, func)
-	for i=0,2 do
-		res[i] = func(a[i], b[i])
-	end
-
-	return res
-end
-
-function vec3_apply2_self(self, b, func)
-	for i=0,2 do
-		self[i] = func(self[i], b[i])
-	end
-
-	return self
-end
 
 
 
@@ -72,10 +54,31 @@ end
 --[[
 	Actual Math Functions
 --]]
+-- Equal
+local function vec3_eq(a, b)
+	return a[0] == b[0] and a[1] == b[1] and a[2] == b[2]
+end
+
+
+-- negate
+local function vec3_neg(res, a)
+	res[0] = -a[0]
+	res[1] = -a[1]
+	res[2] = -a[2]
+
+	return res
+end
+
+local function vec3_neg_new(a)
+	return vec3_neg(vec3(), a)
+end
 
 -- addition
 local function vec3_add(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1 + op2 end)
+	res[0] = a[0]+b[0]
+	res[1] = a[1]+b[1]
+	res[2] = a[2]+b[2]
+	return res
 end
 
 local function vec3_add_new(a, b)
@@ -83,13 +86,16 @@ local function vec3_add_new(a, b)
 end
 
 local function vec3_add_self(a, b)
-	return vec3_add(self, a, b)
+	return vec3_add(a, a, b)
 end
 
 
 -- Subtraction
 local function vec3_sub(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1-op2 end)
+	res[0] = a[0]-b[0]
+	res[1] = a[1]-b[1]
+	res[2] = a[2]-b[2]
+	return res
 end
 
 local function vec3_sub_new(a, b)
@@ -103,7 +109,10 @@ end
 
 -- Scale
 local function vec3_scale(res, a, b)
-	return vec3_apply2(res, a, b, function(op1,op2) return op1*op2 end)
+	res[0] = a[0]*b[0]
+	res[1] = a[1]*b[1]
+	res[2] = a[2]*b[2]
+	return res
 end
 
 local function vec3_scale_new(a, b)
@@ -117,15 +126,22 @@ end
 
 -- Scale by scalar
 local function vec3_scales(res, a, s)
-	return vec3_apply1(res, a, s, function(op1,s) return op1*s end)
+	res[0] = a[0]*s
+	res[1] = a[1]*s
+	res[2] = a[2]*s
+
+	return res
 end
 
 local function vec3_scales_new(a, s)
-	return vec3_scales(vec3(), a, s)
+	return vec3(a[0]*s, a[1]*s, a[2]*s)
 end
 
 local function vec3_scales_self(a, s)
-	return vec3_scales(a, a, s)
+	a[0]=a[0]*s
+	a[1]=a[1]*s
+	a[2]=a[2]*s
+	return a
 end
 
 
@@ -149,8 +165,7 @@ local function vec3_dot(u, v)
 end
 
 local function vec3_angle_between(u,v)
-	local tmp = vec3_dot(u,v)
-	return math.acos(tmp)
+	return math.acos(vec3_dot(u,v))
 end
 
 
@@ -167,7 +182,12 @@ end
 -- Normalize
 local function vec3_normalize(res, u)
 	local scalar = 1/vec3_length(u)
-	return vec3_scales(res, u, scalar)
+
+	res[0] = u[0] * scalar
+	res[1] = u[1] * scalar
+	res[2] = u[2] * scalar
+
+	return res
 end
 
 local function vec3_normalize_new(u)
@@ -200,13 +220,17 @@ end
 
 Vec3 = {
 	vec3 = vec3,
+	Assign = vec3_assign,
 
 	Add = vec3_add_new,
+	AddSelf = vec3_add_self,
 	Sub = vec3_sub_new,
-	Mul = vec3_scale_new,
-	Muls = vec3_scales_new,
+	Scale = vec3_scale_new,
+	Scales = vec3_scales_new,
 	Div = vec3_div_new,
 	Divs = vec3_divs_new,
+	Neg = vec3_neg_new,
+	Eq = vec3_eq,
 
 	Dot = vec3_dot,
 	Cross = vec3_cross_new,
@@ -216,6 +240,8 @@ Vec3 = {
 	Distance = vec3_distance,
 	FindNormal = vec3_find_normal_new,
 	Normalize = vec3_normalize_new,
+	NormalizeSelf = vec3_normalize_self,
+
 	AngleBetween = vec3_angle_between,
 
 	tostring = vec3_tostring,

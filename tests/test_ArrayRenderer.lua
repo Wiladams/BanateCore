@@ -5,6 +5,8 @@ package.path = ppath;
 local BC = require "BanateCore"
 local FixedArray2D = BC.FixedArray2D
 
+local vpt = ViewportTransform(width, height)
+
 
 function PrintArrayASCII(arr)
 	for row=0,arr.Height-1 do
