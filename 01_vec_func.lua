@@ -14,9 +14,17 @@ kEpsilon = 1.0e-6
 --[[
 	HELPER FUNCTIONS
 --]]
-vec2 = ffi.typeof("double[2]")
-vec3 = ffi.typeof("double[3]")
-vec4 = ffi.typeof("double[4]")
+vec2 = ffi.typeof("float[2]")
+vec3 = ffi.typeof("float[3]")
+vec4 = ffi.typeof("float[4]")
+
+float2 = ffi.typeof("float[2]")
+float3 = ffi.typeof("float[3]")
+float4 = ffi.typeof("float[4]")
+
+double2 = ffi.typeof("double[2]")
+double3 = ffi.typeof("double[3]")
+double4 = ffi.typeof("double[4]")
 
 function IsZero(a)
     return (math.abs(a) < kEpsilon);

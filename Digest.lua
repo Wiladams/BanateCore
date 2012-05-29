@@ -1,7 +1,7 @@
-require "000"
+local getbyte = string.byte
 
-Hashes ={}
-Hashes.consts = {
+Digest ={}
+Digest.consts = {
 	0x00000000, 0x77073096, 0xEE0E612C, 0x990951BA,
 	0x076DC419, 0x706AF48F, 0xE963A535, 0x9E6495A3,
 	0x0EDB8832, 0x79DCB8A4, 0xE0D5E91E, 0x97D2D988,
@@ -69,10 +69,12 @@ Hashes.consts = {
 	}
 
 
-function Hashes.CRC32(s)
-	local crc, l, i = 0xFFFFFFFF, strlen(s)
+local function CRC32(s)
+	local crc = 0xFFFFFFFF;
+	local l = strlen(s);
+
 	for i = 1, l, 1 do
-		crc = bxor(rshift(crc, 8), consts[band(bxor(crc, getbyte(s, i)), 0xFF) + 1])
+		crc = bxor(rshift(crc, 8), Digest.consts[band(bxor(crc, getbyte(s, i)), 0xFF) + 1])
 	end
 
 	return bxor(crc, -1)
@@ -83,7 +85,7 @@ end
 -- where data is the location of the data in physical memory and
 -- len is the length of the data in bytes
 
-function Hashes.Adler32(s)
+local function Adler32(s)
 	local MOD_ADLER = 65521;
 	local len = strlen(s)
     local a = 1
@@ -99,5 +101,7 @@ function Hashes.Adler32(s)
 end
 
 
+Digest.CRC32 = CRC32;
+Digest.Adler32 = Adler32;
 
 
