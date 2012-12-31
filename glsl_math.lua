@@ -6,21 +6,24 @@
 -- Implement a language skin that
 -- gives a GLSL feel to the coding
 --=====================================
+
+local ffi = require ("ffi")
 local vec = require "math_vector"
 
 pi = math.pi;
 
-local floatv = function(nelem)
-	return ffi.new("float[?]", nelem);
-end
+--local floatv = function(nelem)
+--	return ffi.new("float[?]", nelem);
+--end
 
 function apply(f, v)
 	if type(v) == "number" then
 		return f(v)
 	end
-
+	
+	local res = ffi.new(ffi.typeof(v))
+	--local res = floatv(nelem)
 	local nelem = #v
-	local res = floatv(nelem)
 	for i=0,nelem-1 do
 		res[i] = f(v[i])
 	end
@@ -33,8 +36,8 @@ function apply2(f, v1, v2)
 		return f(v1, v2)
 	end
 
+	local res = ffi.new(ffi.typeof(v1))
 	local nelem = #v1
-	local res = floatv(nelem)
 	if type(v2)=="number" then
 		for i=0,nelem-1 do
 			res[i] = f(v1[i],v2)
@@ -406,23 +409,11 @@ function dot(v1,v2)
 		return v1*v2
 	end
 
-	if (type(v1) == 'table') then
-		-- if v1 is a table
-		-- it could be vector.vector
-		-- or matrix.vector
-		if type(v1[1] == "number") then
-			local sum=0
-			for i=1,#v1 do
-				sum = sum + (v1[i]*v2[i])
-			end
-			return sum;
-		else -- matrix.vector
-			local res={}
-			for i,x in ipairs(v1) do
-				res[i] = dot(x,v2) end
-			return res
-		end
+	local sum=0
+	for i=0,#v1-1 do
+		sum = sum + (v1[i]*v2[i])
 	end
+	return sum;
 end
 
 function length(v)
@@ -435,14 +426,13 @@ end
 
 function cross(v1, v2)
 	if #v1 ~= 3 then
-		return {0,0,0}
+		return nil
 	end
 
-	return {
-		(v1[2]*v2[3])-(v2[2]*v1[3]),
-		(v1[3]*v2[1])-(v2[3]*v1[1]),
-		(v1[1]*v2[2])-(v2[1]*v1[2])
-	}
+	return ffi.new(ffi.typeof(v1),
+		(v1[1]*v2[2])-(v2[1]*v1[2]),
+		(v1[2]*v2[0])-(v2[2]*v1[0]),
+		(v1[0]*v2[1])-(v2[0]*v1[1]));
 end
 
 function normalize(v1)

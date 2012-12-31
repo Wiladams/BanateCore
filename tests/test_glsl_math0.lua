@@ -5,24 +5,29 @@ package.path = ppath;
 -- test_glsl_math0.lua
 local ffi = require "ffi"
 
-require "glsl_math0"
+local glm = require "glsl_math"
+local vec = require ("math_vector");
+local vec3 = vec.vec3;
 
-print("test_glsl_math0.lua - TEST")
+print("test_glsl_math.lua - TEST")
 
 
 local v1 = vec3(0, 0, 0)
 local v2 = vec3(1, 0, 1)
 local v3 = vec3(1, 1, 1)
+local xaxis = vec3(1, 0, 0);
+local yaxis = vec3(0, 1, 0);
+local zaxis = vec3(0, 0, 1);
 
 print("ANY")
-print(any(v1))
-print(any(v2))
-print(any(v3))
+assert(any(v1) == false)
+assert(any(v2) == true)
+assert(any(v3) == true)
 
 print("ALL")
-print(all(v1))
-print(all(v2))
-print(all(v3))
+assert(all(v1) == false)
+assert(all(v2) == false)
+assert(all(v3) == true)
 
 
 print("MUL")
@@ -31,6 +36,8 @@ print(mul(v1, v4))
 print(mul(v2, v4))
 print(mul(v3, v4))
 
-print("BYTE")
-local b1 = bytev(320*240)
-print("Size: ", ffi.sizeof(b1))
+print("SIGN")
+print(sign(vec3(1, 0, -1)));
+
+print("ANGLE")
+print(angle(xaxis, vec3(1,1,1)));
