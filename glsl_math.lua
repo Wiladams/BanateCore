@@ -6,18 +6,20 @@
 -- Implement a language skin that
 -- gives a GLSL feel to the coding
 --=====================================
---require "glsl_types"
+local vec = require "math_vector"
 
 pi = math.pi;
 
+local floatv = function(nelem)
+	return ffi.new("float[?]", nelem);
+end
 
 function apply(f, v)
 	if type(v) == "number" then
 		return f(v)
 	end
 
-
-	local nelem = floatVectorSize(v)
+	local nelem = #v
 	local res = floatv(nelem)
 	for i=0,nelem-1 do
 		res[i] = f(v[i])
@@ -31,7 +33,7 @@ function apply2(f, v1, v2)
 		return f(v1, v2)
 	end
 
-	local nelem = floatVectorSize(v1)
+	local nelem = #v1
 	local res = floatv(nelem)
 	if type(v2)=="number" then
 		for i=0,nelem-1 do
@@ -69,14 +71,13 @@ end
 -- improved equality test with tolerance
 function equal(v1,v2,tol)
 	assert(type(v1)==type(v2),"equal("..type(v1)..","..type(v2)..") : incompatible types")
-	if not tol then tol=1E-12 end
+	tol = tol or 1E-12;
+
 	return apply(function(x) return x<=tol end,abs(sub(v1,v2)))
 end
 
 function notEqual(v1,v2,tol)
-	assert(type(v1)==type(v2),"equal("..type(v1)..","..type(v2)..") : incompatible types")
-	if not tol then tol=1E-12 end
-	return apply(function(x) return x>tol end,abs(sub(v1,v2)))
+	return not equal(v1, v2, tol);
 end
 
 --=====================================
@@ -449,7 +450,11 @@ function normalize(v1)
 end
 
 function faceforward(n,i,nref)
-	if dot(n,i)<0 then return n else return -n end
+	if dot(n,i)<0 then 
+		return n 
+	else 
+		return -n 
+	end
 end
 
 function reflect(i,n)
@@ -464,7 +469,7 @@ function isnumtrue(x)
 end
 
 function any(x)
-	local nelem = floatVectorSize(x)
+	local nelem = #x
 	for i=0,nelem-1 do
 		local f = isnumtrue(x[i])
 		if f then return true end
@@ -474,7 +479,7 @@ function any(x)
 end
 
 function all(x)
-	local nelem = floatVectorSize(x)
+	local nelem = #x
 	for i=0,nelem-1 do
 		local f = isnumtrue(x[i])
 		if not f then return false end
@@ -495,8 +500,65 @@ end
 --=====================================
 --	Extras, like Processing
 --=====================================
+--[[
+function: map
 
+Description: Take a value 'a' relative to 'rlo' and 'rhi' 
+and create a new value, relative to the range 'slo' and 'shi'
+
+--]]
 function map(a, rlo, rhi, slo, shi)
 	return slo + ((a-rlo)/(rhi-rlo) * (shi-slo))
 end
+
+
+--[[
+local function IsZero(a)
+    return (math.abs(a) < kEpsilon);
+end
+
+	__index = {
+		AngleBetween = function(self,rhs)
+			return math.acos(self:Dot(rhs))
+		end,
+
+		Assign = function(self, rhs)
+			self.x = rhs.x;
+			self.y = rhs.y;
+			self.z = rhs.z;
+		end,
+
+		Clone = function(self)
+			return ffi.new(ffi.typeof(self), self.x, self.y, self.z);
+		end,
+
+		Cross = function(self, v)
+			return ffi.new(ffi.typeof(self),
+				self.y*v.z - v.y*self.z,
+				-self.x*v.z + v.x*self.z,
+				self.x*v.y - v.x*self.y);
+		end,
+
+		Dot = function(self, rhs)
+			return self.x*rhs.x + self.y*rhs.y + self.z*rhs.z;
+		end,
+
+		Length = function(self)
+			return math.sqrt(self:LengthSquared())
+		end,
+
+		LengthSquared = function(self)
+			return self:Dot(self)
+		end,
+
+		Normal = function(self)
+			local scalar = 1/self:Length()
+
+			return ffi.new(ffi.typeof(self),
+				self.x * scalar,
+				self.y * scalar,
+				self.z * scalar);
+		end,
+	},
+--]]
 

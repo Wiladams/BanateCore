@@ -46,4 +46,5 @@ print("NEGATE")
 assert(Vec3.Eq(Vec3.Neg(v1), vec3(-1,-2,-3)), "Error with Vec3.Neg")
 
 print("NORMALIZED")
-	vDir = Vec3.Normalize(vDir)
+local vDir = vec3(2.3, 1.2, 3.0);
+vDir = Vec3.Normalize(vDir)

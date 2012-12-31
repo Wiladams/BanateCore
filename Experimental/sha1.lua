@@ -46,13 +46,28 @@
 
 -------------------------------------------------------------------------------
 -------------------------------------------------------------------------------
-require "000"
+--require "000"
+
+local bit = require "bit"
+local band = bit.band
+local bor = bit.bor
+local bnot = bit.bnot
+local bxor = bit.bxor
+local bror = bit.ror
+local brol = bit.rol
+local lshift = bit.lshift
+local rshift = bit.rshift
+local tobit = bit.tobit
 
 local w32 = require "w32_ops"
 
+
 -- local storing of global functions (minor speedup)
-local floor,modf = math.floor,math.modf
-local char,format,rep = string.char,string.format,string.rep
+local floor 	= math.floor
+local modf 		= math.modf
+local char		= string.char
+local format 	= string.format
+local rep 		= string.rep
 
 
 -- calculating the SHA1 for some text
@@ -101,7 +116,7 @@ function sha1(msg)
 		--
 		for t = 16, 79 do
 			-- For t = 16 to 79 let Wt = S1(Wt-3 XOR Wt-8 XOR Wt-14 XOR Wt-16).
-			W[t] = w32.w32_rot(1, w32.w32_xor_n(W[t-3], W[t-8], W[t-14], W[t-16]))
+			W[t] = brol(bxor(W[t-3], W[t-8], W[t-14], W[t-16]), 1)
 		end
 
 		A,B,C,D,E = H0,H1,H2,H3,H4
@@ -109,28 +124,28 @@ function sha1(msg)
 		for t = 0, 79 do
 			if t <= 19 then
 				-- (B AND C) OR ((NOT B) AND D)
-				f = w32.w32_or(w32.w32_and(B, C), w32.w32_and(w32.w32_not(B), D))
+				f = bor(band(B, C), band(bnot(B), D))
 				K = 0x5A827999
 			elseif t <= 39 then
 				-- B XOR C XOR D
-				f = w32.w32_xor_n(B, C, D)
+				f = bxor(B, C, D)
 				K = 0x6ED9EBA1
 			elseif t <= 59 then
 				-- (B AND C) OR (B AND D) OR (C AND D
-				f = w32.w32_or3(w32.w32_and(B, C), w32.w32_and(B, D), w32.w32_and(C, D))
+				f = bor(band(B, C), band(B, D), band(C, D))
 				K = 0x8F1BBCDC
 			else
 				-- B XOR C XOR D
-				f = w32.w32_xor_n(B, C, D)
+				f = bxor(B, C, D)
 				K = 0xCA62C1D6
 			end
 
 			-- TEMP = S5(A) + ft(B,C,D) + E + Wt + Kt;
-			A,B,C,D,E = w32.w32_add_n(w32.w32_rot(5, A), f, E, W[t], K),
-				A, w32.w32_rot(30, B), C, D
+			A,B,C,D,E = tobit(brol(A, 5)+ f+ E+ W[t]+ K),
+				A, brol(B, 30), C, D
 		end
 		-- Let H0 = H0 + A, H1 = H1 + B, H2 = H2 + C, H3 = H3 + D, H4 = H4 + E.
-		H0,H1,H2,H3,H4 = w32.w32_add(H0, A),w32.w32_add(H1, B),w32.w32_add(H2, C),w32.w32_add(H3, D),w32.w32_add(H4, E)
+		H0,H1,H2,H3,H4 = tobit(H0+A),tobit(H1+B),tobit(H2+C),tobit(H3+D),tobit(H4+E)
 	end
 	local f = w32.w32_to_hexstring
 	return f(H0) .. f(H1) .. f(H2) .. f(H3) .. f(H4)
@@ -173,3 +188,7 @@ end
 
 
 
+
+return {
+	sha1 = sha1,
+}

@@ -13,7 +13,7 @@ ffi.cdef[[
 	} RectI;
 ]]
 
-RectI = nil
+RectI = ffi.typeof("RectI");
 RectI_mt = {
 	__tostring = function(self)
 		return string.format("RectI(%d, %d, %d, %d)",
@@ -70,7 +70,7 @@ RectI_mt = {
 		end,
 	}
 }
-RectI = ffi.metatype("RectI", RectI_mt)
+RectI = ffi.metatype(RectI, RectI_mt)
 
 
 function CalculateTargetFrame(dstX, dstY, dstWidth, dstHeight,

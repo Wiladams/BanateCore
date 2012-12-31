@@ -1,5 +1,5 @@
 -- Put this at the top of any test
-local ppath = package.path..';..\\?.lua'
+local ppath = package.path..';..\\Experimental\\?.lua'
 package.path = ppath;
 
 
@@ -325,7 +325,7 @@ print("Required time for tests: ",diff) --768
 -----------------------------------------------------------------------------------------
 
 
-
+--[[
 -- arithmethic benching
 local function bench(tx,f,t)
 	local n = 0;
@@ -356,5 +356,6 @@ bench("NOT",function() return w32.w32_not(d) end,1)
 bench("ROT",function() return w32.w32_rot(7,d) end,1)
 bench("ROT",function() return w32.w32_rot(1,d) end,1)
 bench("HEX",function() return w32.w32_to_hexstring(d) end,1)
+--]]
 
 
