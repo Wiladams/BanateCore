@@ -205,7 +205,7 @@ function floor(x)
 	return apply(math.floor, x)
 end
 
-function trucfunc(x)
+function truncfunc(x)
 	local asign = sign(x)
 	local res = asign * math.floor(math.abs(x))
 
